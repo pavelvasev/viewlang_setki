@@ -11,7 +11,7 @@ Scene
 		file: Qt.resolvedUrl( "../ris5.dat" )
 	}
 
-	Loader 
+	SetkaLoader 
 	{
 		id: loader
 		file: inputFile.file
@@ -38,7 +38,7 @@ Scene
 		max: 1
 		step: 0.1
 		property var tag: "right"
-		Component.onCompleted: makeLater(this);
+		enableSliding: false
 	}
 
 	Param 
@@ -50,7 +50,7 @@ Scene
 		max: 1
 		step: 0.1
 		property var tag: "right"
-		Component.onCompleted: makeLater(this);
+		enableSliding: false
 	}
 
 	Param 
@@ -62,7 +62,8 @@ Scene
 		max: 1
 		step: 0.1
 		property var tag: "right"
-		Component.onCompleted: makeLater(this);
+		enableSliding: false
+		// Component.onCompleted: makeLater(this); почему убрано - это надо вызывать только для элементов, которые создаются репитером
 	}
 
 	Param 
@@ -74,7 +75,7 @@ Scene
 		max: 1
 		step: 0.1
 		property var tag: "right"
-		Component.onCompleted: makeLater(this);
+		enableSliding: false
 	}	
 
 	Column
@@ -87,7 +88,6 @@ Scene
 			width: 100
 			text: "R"
 			checked: true
-			Component.onCompleted: makeLater(this);
 		}
 		CheckBox 
 		{
@@ -97,7 +97,6 @@ Scene
 			width: 100
 			text: "G"
 			checked: true
-			Component.onCompleted: makeLater(this);
 		}
 		CheckBox 
 		{
@@ -107,7 +106,6 @@ Scene
 			width: 100
 			text: "B"
 			checked: true
-			Component.onCompleted: makeLater(this);
 		}
 	}
 
