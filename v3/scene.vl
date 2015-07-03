@@ -3,15 +3,23 @@ Scene
 	id: thescene
 	
 	Axis { }
+	
+	property alias file: inputFile.file
+	property alias fileParam: inputFile
+	property alias coeffScale: loader.coeff_scale
+
+	// алиас-ы позволяют "вытащить" свойства и объекты "наружу", чтобы ими можно было управлять извне. 
+	// заодно дают возможность задать дублирующее имя. это позволяет нам в разных сетка-программах иметь любые имена,
+	// а наружу выставлять их как алиас-ы под универсальными однообразными именами. это надо appmix-у, для управления приложениями.
 
 	FileParam 
 	{
 		id: inputFile
 		text: "Grid file:"
-		file: Qt.resolvedUrl( "../ris5.dat" )
+    file: thescene.isRoot ? Qt.resolvedUrl( "../ris5.dat" ) : ""
 	}
-
-	SetkaLoader 
+	
+	Loader3
 	{
 		id: loader
 		file: inputFile.file
@@ -19,7 +27,7 @@ Scene
 
 	Text 
 	{
-		text: "Zones: " + loader.grid.length
+		text: "Zones: " + (loader.grid ? loader.grid.length : 0)
 		property var tag: "left"
 	}
 
@@ -50,7 +58,7 @@ Scene
 		max: 1
 		step: 0.1
 		property var tag: "right"
-		enableSliding: false
+		enableSliding: false // выключаем enableSliding - параметр будет меняться только когда пользователь отпустил мышку.
 	}
 
 	Param 
@@ -115,7 +123,7 @@ Scene
 
 		Repeater
 		{
-			model: loader.grid.length
+			model: loader.grid ? loader.grid.length : 0
 
 			Column
 			{

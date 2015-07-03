@@ -1,0 +1,60 @@
+import "../"
+
+// Динамическая загрузка приложений.
+Scene {
+  id: appscene
+
+	FileParam 
+	{
+		id: inputFile
+		text: "Grid file:"
+		file: Qt.resolvedUrl( "../ris5.dat" )
+	}
+
+	property var apps: ["v1/scene2.vl","v2/setka.vl","v3/scene.vl"] 
+
+	property var appsToRun: []
+
+	Repeater {
+	  model: apps.length
+
+	  CheckBoxParam { // CheckBoxParam прикольнее CheckBox, т.к. сохраняет свое значение в URL
+	    tag: "top"
+ 	    id: box
+ 	    text: apps[ index ]
+ 	    width: 120
+ 	    onCheckedChanged: { 
+ 	      appsToRun[index] = checked;  // выставляем значение в глобальный массив
+ 	      appscene.appsToRunChanged(); // руками вызываем его changed-событие (т.к. при присвоении отдельных элементов оно не вызывается)
+ 	    }
+ 	  }
+ 	}
+
+	Repeater {
+	  model: apps.length
+
+    Loader {
+      id: apploader
+ 	    active: appsToRun[ index ]
+      anchors.fill: parent
+      source: Qt.resolvedUrl( "../" + apps[index] )
+      
+      property var app: apploader.item
+
+      onLoaded: {
+        app.coeffScale = 20
+        app.fileParam.visible = false;
+        appscene.refineAll(); 
+      }
+
+      Binding { // надо постоянно напоминать приложению, с каким файлом работаем. для этого тут биндинг.
+        target: app
+        property: "file"
+        value: inputFile.file
+      }
+
+  	} // loader
+	} // repeater
+
+  
+}

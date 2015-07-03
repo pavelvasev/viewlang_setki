@@ -1,0 +1,26 @@
+import "../"
+
+// Статическое подключение объектов приложений. Имена объектов описаны в ../qmldir
+Scene {
+
+	FileParam 
+	{
+		id: inputFile
+		text: "Grid file:"
+		file: Qt.resolvedUrl( "../ris5.dat" )
+	}
+
+  SetkaContoursApp {
+    fileParam.visible: false
+    file: inputFile.file
+    coeffScale: 20
+  }
+  
+  SetkaPointsDataApp {
+    fileParam.visible: false
+    file: inputFile.file    
+    coeffScale: 20
+  }
+  
+  
+}

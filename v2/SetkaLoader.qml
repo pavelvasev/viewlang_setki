@@ -25,6 +25,7 @@ Item {
     var currTail = "";
 
     loadFileC( file, function(data, first, last, acc ) {
+
       if (currTail.length > 0) 
          data = currTail + data;
     
@@ -73,7 +74,7 @@ Item {
           resultscal.push( scalardata ); 
         }
         
-        console.log( "last chunk parse complete" );
+        console.log( "v2/SetkaLoader.qml: last chunk parse complete" );
         scalars = resultscal;
         zones = result;
       }
@@ -113,8 +114,15 @@ Item {
       }
       else
       {
-        if (file_or_path.length == 0) return handler("",true,true,{} );
+	  	  return loadFileBase( file_or_path, istext, function(data) { 
+  		     handler(data, true, true, {} );
+  		  } ); 
+	  	  // вызов загрузчика из вьюланга
 
+
+        /* 
+        if (file_or_path.length == 0) return handler("",true,true,{} );
+        
         setFileProgress( file_or_path,"loading",5);
 
         jQuery.get( file_or_path, function(data) {
@@ -122,6 +130,7 @@ Item {
           handler(data,true,true,{} );
           setFileProgress( file_or_path);
         } );
+        */
       }
     }
     
@@ -145,13 +154,15 @@ function parseLocalFile(file, istext, callback)
 	}
 
 	var blockLoaded = function(evt) {
+
 		if (evt.target.error == null) {
 			offset += evt.target.result.length;
 			updateProgress( 0,"parsing" );
-
+			
 			//if (offset < fileSize) blockLoad(offset, chunkSize, file);
 
 			callback(evt.target.result, firstChunk, offset >= fileSize, accumulator );
+
 			firstChunk = false;
 		} else {
 			console.log("Read error: " + evt.target.error);
@@ -163,18 +174,23 @@ function parseLocalFile(file, istext, callback)
 		    setFileProgress( file.name,"", -1 );
 		    return;
 		}
-
+		
 		blockLoad(offset, chunkSize, file);
 
 		// TODO замерить: 1. Скорости загрузки при разных chunk-size. 2. Как влияет вынос blockload перед обработкой по callback.
 	}
 
-	blockLoad = function(_offset, length, _file) {
+	var blockLoad = function(_offset, length, _file) {
 		var r = new FileReader();
 		var blob = _file.slice(_offset, length + _offset);
 		
 		r.onload = blockLoaded;
 		r.onprogress = updateProgress;
+
+		r.onerror = function(e) {
+      setFileProgress( file.name,"LOCAL FILE READ ERROR");
+      console.error("Local file read error. _file=",_file);
+		}
 
 		if (_offset == 0) {
 		    setFileProgress( file.name,"loading", 0 );
@@ -182,11 +198,11 @@ function parseLocalFile(file, istext, callback)
 			    setFileProgress( file.name,"loading", 1 );
 			};
 		};
-	
-	    if (istext)
+	  
+    if (istext)
 			r.readAsText(blob);
 		else
-		    reader.readAsArrayBuffer(blob);
+	    r.readAsArrayBuffer(blob);
 	}
 
 	blockLoad(offset, chunkSize, file);

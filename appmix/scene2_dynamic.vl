@@ -1,0 +1,52 @@
+import "../"
+
+// Динамическая загрузка приложений. Не очень красивая версия
+Scene {
+  id: appscene
+
+	FileParam 
+	{
+		id: inputFile
+		text: "Grid file:"
+//		file: Qt.resolvedUrl( "../ris5.dat" )
+	}
+	property var apps: ["v1/scene2.vl","v2/setka.vl","v3/scene.vl"]
+
+	Repeater {
+	  id: rep
+	  model: apps.length
+
+	  CheckBoxParam {
+	    tag: "top"
+ 	    id: box
+ 	    text: apps[ index ]
+ 	    width: 120
+
+ 	    Loader {
+ 	      id: apploader
+ 	      active: box.checked
+ 	      anchors.fill: parent
+ 	      source: active ? Qt.resolvedUrl( "../" + apps[index] ) : null
+
+ 	      property var app: apploader.item
+
+ 	      onLoaded: {
+ 	        apploader.parent = appscene
+ 	        appscene.refineAll(); 
+
+ 	        app.coeffScale = 20
+ 	        app.fileParam.visible = false;
+ 	        appscene.refineAll(); 
+ 	      }
+
+ 	      Binding {
+ 	        target: app
+ 	        property: "file"
+ 	        value: inputFile.file
+ 	      }
+ 	    }
+  	}
+	} // repeater
+
+  
+}

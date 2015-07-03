@@ -4,11 +4,14 @@ Scene {
   id: thescene
   axes.visible: true  
 
+	property alias file: inFile.file
+	property alias fileParam: inFile
+	property alias coeffScale: loader.mult
+
   FileParam {
     text: "Файл сетки"
     id: inFile
-    file: Qt.resolvedUrl( "../ris5.dat" )
-    //file: "ris5.dat" 
+    file: thescene.isRoot ? Qt.resolvedUrl( "../ris5.dat" ) : ""
   }
 
   SetkaLoader {
@@ -30,7 +33,7 @@ Scene {
       Paletter {
          showPalette: index == 0
          input: {
-           console.log("pal=",index);
+           console.log("выбрано отображение палитры для колонки ",index);
            return loader.scalars && index < loader.scalars.length && datParam.value > 0 ? loader.scalars[index] [ datParam.value-1 ]: []
          }
          id: palet
@@ -84,7 +87,7 @@ Scene {
     id: datParam
     value: 1
     min: 0
-    max: loader.scalars[0] ? loader.scalars[0].length : 1
+    max: loader.scalars && loader.scalars[0] ? loader.scalars[0].length : 1
     tag: "right"
   }
 
@@ -99,6 +102,7 @@ Scene {
 
   Button {
     text: "Очистить"
+    visible: fileParam.visible
     property var tag: "left" // left,right, top
     onClicked: inFile.file=undefined;
   }

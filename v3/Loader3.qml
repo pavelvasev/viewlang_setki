@@ -1,9 +1,10 @@
-
+// Имя файла не Loader.qml так как Loader зарезервированное имя в qml
+// также оно не SetkaLoader.qml так как в qmlweb есть баг, что не должно быть qml-файлов с одинаковыми именами.
 Item 
 {
 	property var file
 	property var coeff_scale: 15
-	property var grid
+	property var grid: []
 
 	property var q: load()
 
@@ -25,7 +26,7 @@ Item
 		var Max = [];
 
 		var re_zone = /.*ZONE I=\s*(\d+),\s*J=\s*(\d+),\s*K=\s*(\d+),.*/i;
-		
+
 		loadFileC( file, function(data, first, last, acc ) {
 			if (currTail.length > 0) data = currTail + data;
     
@@ -114,12 +115,17 @@ Item
 
 	////////////////////////////////////////////////////////////////////////////
     
-    function loadFileBaseC( file_or_path, istext, handler ) {
+  function loadFileBaseC( file_or_path, istext, handler ) {
 		if (!file_or_path) return handler("", true, true, {} );
 
 		if (file_or_path instanceof File) {
 			parseLocalFile( file_or_path, istext, handler );
 		} else {
+		  return loadFileBase( file_or_path, istext, function(data) { 
+		     handler(data, true, true, {} );
+		  } ); 
+		  // вызов загрузчика из вьюланга
+		
 			if (file_or_path.length == 0) return handler("", true, true, {} );
 
 			setFileProgress( file_or_path, "loading", 5 ); // ?
@@ -173,7 +179,7 @@ Item
 			blockLoad(offset, chunkSize, file);
 		}
 
-		blockLoad = function(_offset, length, _file) {
+		var blockLoad = function(_offset, length, _file) {
 			var r = new FileReader();
 			var blob = _file.slice(_offset, length + _offset);
 		
@@ -186,11 +192,17 @@ Item
 					setFileProgress( file.name, "loading", 1 );
 				};
 			};
+
+  		r.onerror = function(e) {
+        setFileProgress( file.name,"LOCAL FILE READ ERROR");
+        console.error("Local file read error. _file=",_file);
+  		}
+			
 	
 			if (istext)
 				r.readAsText(blob);
 			else
-				reader.readAsArrayBuffer(blob);
+				r.readAsArrayBuffer(blob);
 		}
 
 		blockLoad(offset, chunkSize, file);

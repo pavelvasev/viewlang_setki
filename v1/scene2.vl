@@ -2,6 +2,11 @@
 
 Scene {
   id: thescene
+
+	property alias file: inFile.file
+	property alias fileParam: inFile
+	property alias coeffScale: loader.mult
+  
 /*
   Axes{
     r: 50
@@ -13,7 +18,7 @@ Scene {
   FileParam {
     text: "Файл сетки"
     id: inFile
-    file: Qt.resolvedUrl( "../ris5.dat" )
+    file: thescene.isRoot ? Qt.resolvedUrl( "../ris5.dat" ) : ""
     //file: "ris5.dat" 
   }
 
