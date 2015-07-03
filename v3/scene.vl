@@ -88,10 +88,10 @@ Scene
 
 	Column
 	{
+	  property var tag: "right"
 		CheckBox 
 		{
 			id: check_R
-			property var tag: "right"
 			spacing: 5
 			width: 100
 			text: "R"
@@ -100,7 +100,6 @@ Scene
 		CheckBox 
 		{
 			id: check_G
-			property var tag: "right"
 			spacing: 5
 			width: 100
 			text: "G"
@@ -109,7 +108,6 @@ Scene
 		CheckBox 
 		{
 			id: check_B
-			property var tag: "right"
 			spacing: 5
 			width: 100
 			text: "B"
@@ -132,7 +130,6 @@ Scene
 				CheckBox 
 				{
 					id: check_zone
-					property var tag: "left"
 					spacing: 5
 					width: 100
 					text: "zone #" + index
@@ -386,10 +383,10 @@ Scene
 
 	Column
 	{
+	  property var tag: "left"
 		CheckBox 
 		{
 			id: check_ext
-			property var tag: "left"
 			spacing: 5
 			width: 100
 			text: "ext"
@@ -399,7 +396,6 @@ Scene
 		CheckBox 
 		{
 			id: check_int
-			property var tag: "left"
 			spacing: 5
 			width: 100
 			text: "int"
