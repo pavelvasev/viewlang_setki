@@ -8,6 +8,21 @@ Scene {
 	property alias fileParam: inFile
 	property alias coeffScale: loader.mult
 
+	property var shader
+
+	/* отладка
+Button {
+  property var tag: "left"
+  onClicked: {
+//    console.log(loader.scalars[0]);
+    console.log(loader.zones[5]);    
+    console.log(loader.scalars[5]);        
+//    console.log(loader.scalars[loader.scalars.length-1]);
+  }
+  text: "see"
+}  	
+*/
+
   FileParam {
     text: "Файл сетки"
     id: inFile
@@ -49,6 +64,7 @@ Scene {
         id: pt
         
         colors: palet.output
+        shader: thescene.shader
       }
 
       Param {
@@ -79,7 +95,7 @@ Scene {
     id: prParam
     value: 25
     min: 0
-    max: 50
+    max: 50 * loader.radii * 20 / loader.mult
   }
 
   Param {

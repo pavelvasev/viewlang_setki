@@ -1,3 +1,5 @@
+// нерабочий вариант выяснения мин-макс, ибо MinMax идет по всем под-массивам, а мы с ним ведем себя так, будто у нас один массив
+
 // chunk-загрузчик сетки (простая версия)
 
 Item {
@@ -15,22 +17,18 @@ Item {
   /// внутренность
   property var q: load()
   
-  property var minmax: []
-  property var diff: [minmax[1]-minmax[0], minmax[3]-minmax[2], minmax[5]-minmax[4]]
-  property var radii: Math.max( Math.max( diff[0], diff[1] ), diff[2] ) // макс значение стороны ограничиваюего прямоугольника
-
+  property var minmax: [xsize.min,xsize.max,ysize.min,ysize.max,zsize.min,zsize.max]
+  
+  property var radii: Math.max( Math.max( xsize.diff, ysize.diff ), zsize.diff ) // макс значение стороны ограничиваюего прямоугольника
   onRadiiChanged: {
-//    if (typeof(radii) === "undefined")
-//     debugger;
-    console.log("radii=",radii,"diff=",diff,"minmax=",minmax);
+    if (typeof(radii) === "undefined");
+      debugger;
+    console.log("radii=",radii);
   }
 
-/*  
-  
 //  Merger { IDEA объект обединяющий output-ы своих детев
 //    id: merg
-    property var minmax: [xsize.min,xsize.max,ysize.min,ysize.max,zsize.min,zsize.max]
-  property var diff: [xsize.max-xsize.min,ysize.max-ysize.min,zsize.max-zsize.min]    
+
     MinMax {
       input: zones
       step: 3
@@ -55,7 +53,8 @@ Item {
 //  }
   
   /*
-  MinMaxInnerFind {
+
+  MinMaxInnerFind { /// хмм, такой вот фильтратор делать? 
     mask: [1,0,3] /// только 1й уровень (нумерация с 0), старт с 0, шаг 3
   }
 
@@ -70,6 +69,19 @@ Item {
     }
   } но вопрос - как это еще обобщить? или можно было бы может генерить prefilter, чтобы к свойству curprop не обращаться.
 
+  О идея!
+  
+  MinMax { 
+    input: zones
+    curprop: 2
+    pass: curprop // аргумент pass означает передать доп. аргументом значение pass. Хотя можно тогда и функцию-генератор acc сделать.
+    function prefilter(v,acc,i,len,depth,arg) {
+      if (depth) != 1) return false;
+      if (i % 3 != arg) return false; //z curprop=2
+      return true;
+    }
+  } 
+  
   MinMax {
     input: zones
     step: 3
@@ -101,8 +113,6 @@ Item {
     var scalardata = [];
 
     var currTail = "";
-    
-    var mmax = [1e10,-1e10, 1e10,-1e10, 1e10,-1e10];
 
     loadFileC( file, function(data, first, last, acc ) {
 
@@ -147,13 +157,6 @@ Item {
           zonedata.push( yy*mult );
           zonedata.push( zz*mult );
 
-          if (mmax[0] > xx) mmax[0] = xx;
-          if (mmax[1] < xx) mmax[1] = xx;
-          if (mmax[2] > yy) mmax[2] = yy;
-          if (mmax[3] < yy) mmax[3] = yy;
-          if (mmax[4] > zz) mmax[4] = zz;
-          if (mmax[5] < zz) mmax[5] = zz;                    
-
           //zonedata.push( parseFloat( (myRe.exec(line) || "0.0") [0] ) * mult );
           //zonedata.push( parseFloat( (myRe.exec(line) || "0.0") [0] ) * mult );
           //zonedata.push( parseFloat( (myRe.exec(line) || "0.0") [0] ) * mult );
@@ -178,7 +181,6 @@ Item {
         console.log( "v2/SetkaLoader.qml: last chunk parse complete" );
         scalars = resultscal;
         zones = result;
-        minmax = mmax;
       }
 
     }); // обработчик чанка

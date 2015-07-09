@@ -1,0 +1,12 @@
+// Отображение вершин сетки точками + соединение их линией + внесение искажения по оси Z
+import components.distort
+import ".."
+
+SetkaPointsDataApp {
+  shader: dist.shader
+
+  DistortZAxisApp {
+    id: dist
+  }
+
+}

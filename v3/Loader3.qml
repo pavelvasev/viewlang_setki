@@ -8,6 +8,9 @@ Item
 
 	property var q: load()
 
+	function getHex(i,j,k,z) {
+	}
+
 	function load() {
 		
 		var result = [];
