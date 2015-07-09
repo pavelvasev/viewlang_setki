@@ -4,6 +4,7 @@ Item {
   /// вход
   property var file // строка или объект File
   property var mult: 20
+  property var order: 0
   
   /// выход
   property var zones // массив вершин точек по зонам. Первая зона это zones[0] -> массив вершин [x,y,z,x,y,z,...], вторая zones[1] -> [x,y,z,x,y,z,...]
@@ -103,6 +104,7 @@ Item {
     var currTail = "";
     
     var mmax = [1e10,-1e10, 1e10,-1e10, 1e10,-1e10];
+    var oorder = order;
 
     loadFileC( file, function(data, first, last, acc ) {
 
@@ -143,9 +145,17 @@ Item {
           rr = myRe.exec(line);
           zz = rr ? parseFloat(rr) : 0;          
           
-          zonedata.push( xx*mult );
-          zonedata.push( yy*mult );
-          zonedata.push( zz*mult );
+          if (oorder === 0) {
+	          zonedata.push( xx*mult );
+	          zonedata.push( yy*mult );
+	          zonedata.push( zz*mult );
+	        }
+	        else
+	        {
+	          zonedata.push( yy*mult );
+	          zonedata.push( zz*mult );
+	          zonedata.push( xx*mult );
+	        }
 
           if (mmax[0] > xx) mmax[0] = xx;
           if (mmax[1] < xx) mmax[1] = xx;

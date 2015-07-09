@@ -7,6 +7,7 @@ Scene {
 	property alias file: inFile.file
 	property alias fileParam: inFile
 	property alias coeffScale: loader.mult
+	property alias order: loader.order
 
 	property var shader
 

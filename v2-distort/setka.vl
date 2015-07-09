@@ -3,6 +3,7 @@ import components.distort
 import ".."
 
 SetkaPointsDataApp {
+  order: 1
   shader: dist.shader
 
   DistortZAxisApp {
