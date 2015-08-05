@@ -1,0 +1,179 @@
+import "obj"
+
+Scene 
+{
+	id: thescene
+	text: ""
+
+	property var script_flag: false
+	property var q: script_init()
+
+	function script_init()
+	{
+		if (!script_flag )
+		{ 
+			la_require( 
+				$basePath + "js/smth.js", 
+				function() { script_flag = true; }
+			);
+			
+			console.log("require: js/smth.js");
+		}
+	}
+
+	FileParam
+	{
+		id: inputFile
+		text: "Grid file:"
+		file: Qt.resolvedUrl( "../fnodes_cor.dat" )
+	}
+
+	Load
+	{
+		id: loader
+		file: inputFile.file
+	}
+
+	Axis { }
+
+	Text 
+	{
+		text: loader.grid.length ?
+			"Blocks: " + loader.grid.length: ""
+		property var tag: "left"
+	}
+
+	Column
+	{
+		property var tag: "left"
+
+		Repeater
+		{
+			id: zone
+			model: loader.grid.length
+
+			Column
+			{
+				property var tag: "left"
+
+				function checkbox_generate(n)
+				{
+					var lst = [];
+					var l = 1;
+
+					if (n == 1)
+						l = loader.grid[ index ].length
+					if (n == 2)
+						l = loader.grid[ index ][0].length
+					if (n == 3)
+						l = loader.grid[ index ][0][0].length
+
+					for (var i = 1; i < l; i++) lst.push(i);
+
+					return lst;
+				}
+
+				CheckBox 
+				{
+					id: check_zone
+					text: "#" + index + " ( " + 
+						"k: " + loader.grid[ index ].length + ", " +
+						"j: " + loader.grid[ index ][0].length + ", " +
+						"i: " + loader.grid[ index ][0][0].length + ")"
+					checked: true
+
+					spacing: 5
+					width: 220
+
+					Component.onCompleted: makeLater(this);
+				}
+
+				Row 
+				{
+					Text
+					{
+						text: " dk: "
+						y: 2
+					}
+
+					ComboBox 
+					{
+						id: step_k
+						model: checkbox_generate(1)
+						currentIndex: Math.floor(
+							loader.grid[ index ].length / 50) * 2
+
+						width: 40
+						y: 2
+						
+						Component.onCompleted: makeLater(this);
+					}
+
+					Text
+					{
+						text: " dj: "
+						y: 2
+					}
+
+					ComboBox 
+					{
+						id: step_j
+						model: checkbox_generate(2)
+						currentIndex: Math.floor(
+							loader.grid[ index ][0].length / 50) * 2
+						
+						width: 40
+						y: 2
+						
+						Component.onCompleted: makeLater(this);
+					}
+
+					Text
+					{
+						text: " di: "
+						y: 2
+					}
+
+					ComboBox 
+					{
+						id: step_i
+						model: checkbox_generate(3)
+						currentIndex: Math.floor(
+							loader.grid[ index ][0][0].length / 50) * 2
+
+						width: 40
+						y: 2
+						
+						Component.onCompleted: makeLater(this);
+					}
+				}
+
+				Item
+				{
+					id: grid
+					property var z: index
+
+					Smth
+					{
+						data: loader.grid[ grid.z ]
+						scale_coeff:loader.scale_coeff
+						
+						detail: [
+							step_k.currentText, 
+							step_j.currentText, 
+							step_i.currentText ]
+
+						visible: check_zone.checked
+
+						Component.onCompleted: makeLater(this);
+					}
+
+					Component.onCompleted: makeLater(this);
+				}
+			}
+		}
+	}
+
+
+
+}
