@@ -5,10 +5,10 @@ SceneObject
 	property var data
 	property var scale_coeff: 1
 	property var detail: [1, 1, 1]
-	property var options: []
+	property var modes: []
 
-	property var range: [0, 0, 0, -1, -1, -1] 
-	property var color_mode: 1
+	property var range: [] 
+	property var range_modes: []
 
 	function make3d() {
 
@@ -20,11 +20,13 @@ SceneObject
 
 			this.sceneObject = Smth.init(
 					data, scale_coeff, 
-					detail, range, 
-					options, color_mode
+					detail, modes, 
+					range, range_modes
 				);
 
 			scene.add(this.sceneObject);
+
+			this.sceneObject.visible = visible;
 		}
 	}
 
@@ -38,6 +40,8 @@ SceneObject
 
 	onDetailChanged: makeLater(this);
 
+	onModesChanged: makeLater(this);
+
 	function clear() {
 		clearobj( this.sceneObject ); 
 		this.sceneObject = undefined;
@@ -47,10 +51,9 @@ SceneObject
 		if (obj) {
 
 			scene.remove( obj );
-			if(obj.geometry) obj.geometry.dispose();
-			if(obj.material) obj.material.dispose();
-			if (obj.texture)
-				obj.texture.dispose();
+			if (obj.geometry) obj.geometry.dispose();
+			if (obj.material) obj.material.dispose();
+			if (obj.texture) obj.texture.dispose();
 		}
 	}
 

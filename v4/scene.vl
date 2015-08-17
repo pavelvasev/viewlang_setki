@@ -25,7 +25,7 @@ Scene
 	{
 		id: inputFile
 		text: "Grid file:"
-		file: Qt.resolvedUrl( "../fnodes_cor.dat" )
+		file: Qt.resolvedUrl( "../ris5.dat" )
 	}
 
 	Load
@@ -36,16 +36,16 @@ Scene
 
 	Axis { }
 
-	Text 
-	{
-		text: loader.grid.length ?
-			"Blocks: " + loader.grid.length: ""
-		property var tag: "left"
-	}
-
 	Column
 	{
 		property var tag: "left"
+
+		Text 
+		{
+			text: loader.grid.length ?
+				"--- Blocks: " + loader.grid.length + " ---": ""
+			property var tag: "left"
+		}
 
 		Repeater
 		{
@@ -56,7 +56,7 @@ Scene
 			{
 				property var tag: "left"
 
-				function checkbox_generate(n)
+				function combobox_generate(n)
 				{
 					var lst = [];
 					var l = 1;
@@ -77,9 +77,9 @@ Scene
 				{
 					id: check_zone
 					text: "#" + index + " ( " + 
-						"k: " + loader.grid[ index ].length + ", " +
+						"i: " + loader.grid[ index ][0][0].length + ", " +
 						"j: " + loader.grid[ index ][0].length + ", " +
-						"i: " + loader.grid[ index ][0][0].length + ")"
+						"k: " + loader.grid[ index ].length + ")"
 					checked: true
 
 					spacing: 5
@@ -90,62 +90,51 @@ Scene
 
 				Row 
 				{
-					Text
-					{
-						text: " dk: "
-						y: 2
-					}
-
-					ComboBox 
-					{
-						id: step_k
-						model: checkbox_generate(1)
-						currentIndex: Math.floor(
-							loader.grid[ index ].length / 50) * 2
-
-						width: 40
-						y: 2
-						
-						Component.onCompleted: makeLater(this);
-					}
-
-					Text
-					{
-						text: " dj: "
-						y: 2
-					}
-
-					ComboBox 
-					{
-						id: step_j
-						model: checkbox_generate(2)
-						currentIndex: Math.floor(
-							loader.grid[ index ][0].length / 50) * 2
-						
-						width: 40
-						y: 2
-						
-						Component.onCompleted: makeLater(this);
-					}
-
-					Text
-					{
-						text: " di: "
-						y: 2
-					}
+					Text { text: " di: "; y: 2 }
 
 					ComboBox 
 					{
 						id: step_i
-						model: checkbox_generate(3)
+						model: combobox_generate(3)
 						currentIndex: Math.floor(
-							loader.grid[ index ][0][0].length / 50) * 2
+							loader.grid[ index ][0][0].length / 10) * 2
 
 						width: 40
 						y: 2
 						
 						Component.onCompleted: makeLater(this);
 					}
+
+					Text { text: " dj: "; y: 2 }
+
+					ComboBox 
+					{
+						id: step_j
+						model: combobox_generate(2)
+						currentIndex: Math.floor(
+							loader.grid[ index ][0].length / 10) * 2
+						
+						width: 40
+						y: 2
+						
+						Component.onCompleted: makeLater(this);
+					}
+
+					Text { text: " dk: "; y: 2 }
+
+					ComboBox 
+					{
+						id: step_k
+						model: combobox_generate(1)
+						currentIndex: Math.floor(
+							loader.grid[ index ].length / 10) * 2
+
+						width: 40
+						y: 2
+						
+						Component.onCompleted: makeLater(this);
+					}
+
 				}
 
 				Item
@@ -163,6 +152,33 @@ Scene
 							step_j.currentText, 
 							step_i.currentText ]
 
+						modes: (mode_default.checked)? [] : [
+							[ 
+								line_1.checked, 
+								line_2.checked, 
+								line_3.checked, 
+								[
+									line_dashed.checked,
+
+									color_line_1.value, 
+									color_line_2.value, 
+									color_line_3.value 
+								],
+								[ border_bold.checked, color_border.value ] 
+							],
+							[ 
+								face_1.checked, 
+								face_2.checked, 
+								face_3.checked, 
+								[
+									face_opacity.value, 
+
+									color_face_1.value, 
+									color_face_2.value, 
+									color_face_3.value 
+								] 
+							], [ border_spheres.checked ] ]
+
 						visible: check_zone.checked
 
 						Component.onCompleted: makeLater(this);
@@ -172,8 +188,176 @@ Scene
 				}
 			}
 		}
+
+		Row 
+		{
+			Text { text: "--- Mode ---"; y: 2 }
+
+			CheckBox 
+			{
+				id: mode_default
+				text: "default"
+				checked: true
+
+				spacing: 5
+				width: 80
+			}
+		}
+
+		Row 
+		{
+			visible: !mode_default.checked
+
+			Text { text: "Lines"; y: 2 }
+
+			CheckBox 
+			{
+				id: line_1
+				text: "1(i)"
+				checked: true
+
+				spacing: 5
+				width: 50
+			}
+
+			CheckBox 
+			{
+				id: line_2
+				text: "2(j)"
+				checked: true
+
+				spacing: 5
+				width: 50
+			}
+
+			CheckBox 
+			{
+				id: line_3
+				text: "3(k)"
+				checked: true
+
+				spacing: 5
+				width: 50
+			}
+		}
+
+		Row
+		{
+			visible: !mode_default.checked
+
+			CheckBox 
+			{
+				id: line_dashed
+				text: "dashed"
+				checked: false
+
+				spacing: 5
+				width: 90
+			}
+
+			Text { text: "colors"; y: 2 }
+
+			Picker { id: color_line_1; value: '#ffffff' }
+
+			Picker { id: color_line_2; value: '#ffffff' }
+
+			Picker { id: color_line_3; value: '#ffffff' }
+		}
+
+		Row
+		{
+			visible: !mode_default.checked
+
+			Text { text: "Border"; y: 2 }
+
+			CheckBox 
+			{
+				id: border_bold
+				text: "bold"
+				checked: true
+
+				spacing: 5
+				width: 60
+			}
+
+			CheckBox 
+			{
+				id: border_spheres
+				text: "vertices"
+				checked: true
+
+				spacing: 5
+				width: 90
+			}
+
+			Text { text: "color"; y: 2 }
+
+			Picker { id: color_border }
+		}
+
+		Row 
+		{
+			visible: !mode_default.checked
+
+			Text { text: "Faces"; y: 2 }
+
+			CheckBox 
+			{
+				id: face_1
+				text: "1(ij)"
+				checked: false
+
+				spacing: 5
+				width: 55
+			}
+
+			CheckBox 
+			{
+				id: face_2
+				text: "2(ik)"
+				checked: false
+
+				spacing: 5
+				width: 55
+			}
+
+			CheckBox 
+			{
+				id: face_3
+				text: "3(jk)"
+				checked: false
+
+				spacing: 5
+				width: 55
+			}
+		}
+
+		Row
+		{
+			visible: !mode_default.checked
+
+			Text { text: " opacity"; y: 2 }
+
+			Slider
+			{
+				id: face_opacity
+
+				minimumValue: 0.0
+				maximumValue: 1.0
+				stepSize: 0.1
+				value: 0.1
+				
+				updateValueWhileDragging: false
+				width: 60
+			}
+
+			Text { text: " colors"; y: 2 }
+
+			Picker { id: color_face_1; value: '#00ffff' }
+
+			Picker { id: color_face_2; value: '#ff00ff' }
+
+			Picker { id: color_face_3; value: '#ffff00' }
+		}
 	}
-
-
-
 }
