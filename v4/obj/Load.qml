@@ -56,15 +56,7 @@ Item
 					continue;
 				}
 
-				/*var myRe = /\s*([0-9e+-.]+)/g;
-
-				var numb = [
-					parseFloat( (myRe.exec(line) || "0.0") [0] ) * coeff_scale,
-					parseFloat( (myRe.exec(line) || "0.0") [0] ) * coeff_scale,
-					parseFloat( (myRe.exec(line) || "0.0") [0] ) * coeff_scale
-				];*/
-
-				var numb = line.match(/(\-?\d\S+)/g); //
+				var numb = line.match(/(\-?\d\S+)/g);
 
 				if (!!numb) { //
 
@@ -97,7 +89,7 @@ Item
 						};
 						currI = [];
 					};
-				}; //
+				};
 			}
 
 			if (last) {

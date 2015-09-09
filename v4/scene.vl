@@ -4,21 +4,36 @@ Scene
 {
 	id: thescene
 	text: ""
+	
+	property var script_gui_flag: false
+	property var script_grid_flag: false
 
-	property var script_flag: false
 	property var q: script_init()
 
 	function script_init()
 	{
-		if (!script_flag )
-		{ 
+		if ( !script_gui_flag )
 			la_require( 
-				$basePath + "js/smth.js", 
-				function() { script_flag = true; }
-			);
-			
-			console.log("require: js/smth.js");
-		}
+				$basePath + "lib/dat.gui/build/dat.gui.min.js",
+				function() { 
+					
+					// add remove folder function
+					dat.GUI.prototype.removeFolder = function(name) {
+						var folder = this.__folders[name];
+						if (!folder) return;
+						folder.close();
+						this.__ul.removeChild(folder.domElement.parentNode);
+						delete this.__folders[name];
+						this.onResize();
+					}
+
+					script_gui_flag = true; 
+				});
+
+		if ( !script_grid_flag )
+			la_require( 
+				$basePath + "js/grid.js", 
+				function() { script_grid_flag = true; });
 	}
 
 	FileParam
@@ -36,328 +51,285 @@ Scene
 
 	Axis { }
 
-	Column
+	Repeater
 	{
-		property var tag: "left"
+		id: grid
+		model: loader.grid.length
 
-		Text 
-		{
-			text: loader.grid.length ?
-				"--- Blocks: " + loader.grid.length + " ---": ""
-			property var tag: "left"
+		property var gui
+		property var q: init_controls()
+
+		property var f_blocks
+		property var f_visible
+		property var f_detail
+
+		property var controls: {}
+		property var d_controls: {}
+		property var s_controls: {}
+		property var id_controls: []
+
+		property var style_default: true
+		property var lines_style: []
+		property var faces_style: []
+
+		property var lstate: 0
+		property var fstate: 0
+
+		onLstateChanged: {
+
+			if (style_default != grid.s_controls["Default Style"])
+				style_default = grid.s_controls["Default Style"];
+
+			var lines_style_visible = [
+				grid.s_controls["lines i"], 
+				grid.s_controls["lines j"],
+				grid.s_controls["lines k"]];
+			var lines_style_colors = [
+				grid.s_controls["lines i color"], 
+				grid.s_controls["lines j color"], 
+				grid.s_controls["lines k color"], 
+				grid.s_controls["border color"]];
+			var lines_style_options = [
+				grid.s_controls["lines dashed"], 
+				grid.s_controls["border bold"]];
+
+			lines_style = [
+					lines_style_visible,
+					lines_style_colors,
+					lines_style_options
+				];
 		}
 
-		Repeater
-		{
-			id: zone
-			model: loader.grid.length
+		onFstateChanged: {
 
-			Column
-			{
-				property var tag: "left"
+			if (style_default != grid.s_controls["Default Style"])
+				style_default = grid.s_controls["Default Style"];
 
-				function combobox_generate(n)
-				{
-					var lst = [];
-					var l = 1;
+			var faces_style_visible = [
+				grid.s_controls["faces ij"], 
+				grid.s_controls["faces ik"], 
+				grid.s_controls["faces jk"]];
+			var faces_style_colors = [
+				grid.s_controls["faces ij color"], 
+				grid.s_controls["faces ik color"], 
+				grid.s_controls["faces jk color"] ];
+			var faces_style_options = [
+				grid.s_controls["faces opacity"]];
 
-					if (n == 1)
-						l = loader.grid[ index ].length
-					if (n == 2)
-						l = loader.grid[ index ][0].length
-					if (n == 3)
-						l = loader.grid[ index ][0][0].length
-
-					for (var i = 1; i < l; i++) lst.push(i);
-
-					return lst;
-				}
-
-				CheckBox 
-				{
-					id: check_zone
-					text: "#" + index + " ( " + 
-						"i: " + loader.grid[ index ][0][0].length + ", " +
-						"j: " + loader.grid[ index ][0].length + ", " +
-						"k: " + loader.grid[ index ].length + ")"
-					checked: true
-
-					spacing: 5
-					width: 220
-
-					Component.onCompleted: makeLater(this);
-				}
-
-				Row 
-				{
-					Text { text: " di: "; y: 2 }
-
-					ComboBox 
-					{
-						id: step_i
-						model: combobox_generate(3)
-						currentIndex: Math.floor(
-							loader.grid[ index ][0][0].length / 10) * 2
-
-						width: 40
-						y: 2
-						
-						Component.onCompleted: makeLater(this);
-					}
-
-					Text { text: " dj: "; y: 2 }
-
-					ComboBox 
-					{
-						id: step_j
-						model: combobox_generate(2)
-						currentIndex: Math.floor(
-							loader.grid[ index ][0].length / 10) * 2
-						
-						width: 40
-						y: 2
-						
-						Component.onCompleted: makeLater(this);
-					}
-
-					Text { text: " dk: "; y: 2 }
-
-					ComboBox 
-					{
-						id: step_k
-						model: combobox_generate(1)
-						currentIndex: Math.floor(
-							loader.grid[ index ].length / 10) * 2
-
-						width: 40
-						y: 2
-						
-						Component.onCompleted: makeLater(this);
-					}
-
-				}
-
-				Item
-				{
-					id: grid
-					property var z: index
-
-					Smth
-					{
-						data: loader.grid[ grid.z ]
-						scale_coeff:loader.scale_coeff
-						
-						detail: [
-							step_k.currentText, 
-							step_j.currentText, 
-							step_i.currentText ]
-
-						modes: (mode_default.checked)? [] : [
-							[ 
-								line_1.checked, 
-								line_2.checked, 
-								line_3.checked, 
-								[
-									line_dashed.checked,
-
-									color_line_1.value, 
-									color_line_2.value, 
-									color_line_3.value 
-								],
-								[ border_bold.checked, color_border.value ] 
-							],
-							[ 
-								face_1.checked, 
-								face_2.checked, 
-								face_3.checked, 
-								[
-									face_opacity.value, 
-
-									color_face_1.value, 
-									color_face_2.value, 
-									color_face_3.value 
-								] 
-							], [ border_spheres.checked ] ]
-
-						visible: check_zone.checked
-
-						Component.onCompleted: makeLater(this);
-					}
-
-					Component.onCompleted: makeLater(this);
-				}
-			}
+			faces_style = [
+					faces_style_visible,
+					faces_style_colors,
+					faces_style_options
+				];
 		}
 
-		Row 
+		function init_controls()
 		{
-			Text { text: "--- Mode ---"; y: 2 }
-
-			CheckBox 
+			if ( script_gui_flag )
 			{
-				id: mode_default
-				text: "default"
-				checked: true
+				gui = new dat.GUI( { width: 350 } );
 
-				spacing: 5
-				width: 80
-			}
-		}
+				f_blocks = gui.addFolder('Blocks');
 
-		Row 
-		{
-			visible: !mode_default.checked
+				f_visible = f_blocks.addFolder("Visible");
+				f_detail = f_blocks.addFolder("Detail");
 
-			Text { text: "Lines"; y: 2 }
-
-			CheckBox 
-			{
-				id: line_1
-				text: "1(i)"
-				checked: true
-
-				spacing: 5
-				width: 50
-			}
-
-			CheckBox 
-			{
-				id: line_2
-				text: "2(j)"
-				checked: true
-
-				spacing: 5
-				width: 50
-			}
-
-			CheckBox 
-			{
-				id: line_3
-				text: "3(k)"
-				checked: true
-
-				spacing: 5
-				width: 50
-			}
-		}
-
-		Row
-		{
-			visible: !mode_default.checked
-
-			CheckBox 
-			{
-				id: line_dashed
-				text: "dashed"
-				checked: false
-
-				spacing: 5
-				width: 90
-			}
-
-			Text { text: "colors"; y: 2 }
-
-			Picker { id: color_line_1; value: '#ffffff' }
-
-			Picker { id: color_line_2; value: '#ffffff' }
-
-			Picker { id: color_line_3; value: '#ffffff' }
-		}
-
-		Row
-		{
-			visible: !mode_default.checked
-
-			Text { text: "Border"; y: 2 }
-
-			CheckBox 
-			{
-				id: border_bold
-				text: "bold"
-				checked: true
-
-				spacing: 5
-				width: 60
-			}
-
-			CheckBox 
-			{
-				id: border_spheres
-				text: "vertices"
-				checked: true
-
-				spacing: 5
-				width: 90
-			}
-
-			Text { text: "color"; y: 2 }
-
-			Picker { id: color_border }
-		}
-
-		Row 
-		{
-			visible: !mode_default.checked
-
-			Text { text: "Faces"; y: 2 }
-
-			CheckBox 
-			{
-				id: face_1
-				text: "1(ij)"
-				checked: false
-
-				spacing: 5
-				width: 55
-			}
-
-			CheckBox 
-			{
-				id: face_2
-				text: "2(ik)"
-				checked: false
-
-				spacing: 5
-				width: 55
-			}
-
-			CheckBox 
-			{
-				id: face_3
-				text: "3(jk)"
-				checked: false
-
-				spacing: 5
-				width: 55
-			}
-		}
-
-		Row
-		{
-			visible: !mode_default.checked
-
-			Text { text: " opacity"; y: 2 }
-
-			Slider
-			{
-				id: face_opacity
-
-				minimumValue: 0.0
-				maximumValue: 1.0
-				stepSize: 0.1
-				value: 0.1
+				s_controls["lines i"] = true;
+				s_controls["lines j"] = true;
+				s_controls["lines k"] = true;
+				s_controls["lines i color"] = "#ffffff";
+				s_controls["lines j color"] = '#ffffff';
+				s_controls["lines k color"] = '#ffffff';
+				s_controls["lines dashed"] = false;
+				s_controls["border color"] = '#000000';
+				s_controls["border bold"] = true;
 				
-				updateValueWhileDragging: false
-				width: 60
+				s_controls["faces ij"] = false;
+				s_controls["faces ik"] = false;
+				s_controls["faces jk"] = false;
+				s_controls["faces ij color"] = '#00ffff';
+				s_controls["faces ik color"] = '#ff00ff';
+				s_controls["faces jk color"] = '#ffff00';
+				s_controls["faces opacity"] = 0.2;
+
+				s_controls["Default Style"] = true;
+
+				var c = f_blocks.add(s_controls, "Default Style");
+
+				c.onFinishChange(function(value)
+				{ 
+					if ( value ) 
+					{
+						f_blocks.removeFolder("Lines Style");
+						f_blocks.removeFolder("Faces Style");
+					} 
+					else 
+					{
+						grid.add_style_folders();
+						grid.lstate = (grid.lstate + 1) % 2;
+						grid.fstate = (grid.fstate + 1) % 2;
+					}
+					grid.style_default = value;
+				});	
+			}
+		}
+
+		function add_style_controls(f_lines, f_faces, controls)
+		{
+			var change_l = function(value) { 
+				grid.lstate = (grid.lstate + 1) % 2; }
+			var change_f = function(value) { 
+				grid.fstate = (grid.fstate + 1) % 2; }
+
+			f_lines.add(controls, "lines i").onFinishChange(change_l); 
+			f_lines.add(controls, "lines j").onFinishChange(change_l); 
+			f_lines.add(controls, "lines k").onFinishChange(change_l); 
+			f_lines.addColor(controls, "lines i color").onChange(change_l); 
+			f_lines.addColor(controls, "lines j color").onChange(change_l); 
+			f_lines.addColor(controls, "lines k color").onChange(change_l); 
+			f_lines.add(controls, "lines dashed").onFinishChange(change_l); 
+			f_lines.addColor(controls, "border color").onChange(change_l); 
+			f_lines.add(controls, "border bold").onFinishChange(change_l); 
+							
+			f_faces.add(controls, "faces ij").onFinishChange(change_f);
+			f_faces.add(controls, "faces ik").onFinishChange(change_f);
+			f_faces.add(controls, "faces jk").onFinishChange(change_f);
+			f_faces.addColor(controls, "faces ij color").onChange(change_f);
+			f_faces.addColor(controls, "faces ik color").onChange(change_f);
+			f_faces.addColor(controls, "faces jk color").onChange(change_f);
+			f_faces.add(controls, "faces opacity", 0, 1).step(0.05)
+				.onFinishChange(change_f);
+		}
+
+		function add_style_folders()
+		{
+			var f_lines = grid.f_blocks.addFolder("Lines Style");
+			var f_faces = grid.f_blocks.addFolder("Faces Style");
+
+			add_style_controls(f_lines, f_faces, s_controls);
+		}
+
+		Item
+		{
+			id: block
+			property var z: index
+
+			property var q: add_controls()
+
+			property var option_visible: true
+			property var option_detail: [
+					Math.floor(loader.grid[ index ].length / 25) * 2 + 1,
+					Math.floor(loader.grid[ index ][0].length / 25) * 2 + 1,
+					Math.floor(loader.grid[ index ][0][0].length / 25) * 2 + 1
+				]
+			
+			function add_controls()
+			{
+				if (block.z == 0 && grid.id_controls.length > 0) {
+
+					while(grid.id_controls.length > 0)
+					{
+						var c = grid.id_controls.pop();
+						c[0].remove(c[1]);
+					}
+				}
+
+				var name = "#" + (block.z + 1).toString() + " visible";
+
+				grid.controls[ name ] = true;
+				
+				var c = grid.f_visible.add(grid.controls, name);
+				
+				c.onFinishChange(function(value){ 
+						block.option_visible = value;
+					});
+
+				grid.id_controls.push([grid.f_visible, c]);
+
+				var d = [
+					loader.grid[ block.z ].length, 
+					loader.grid[ block.z ][0].length, 
+					loader.grid[ block.z ][0][0].length]
+
+				name = '#' + (block.z + 1).toString() + " (" + 
+					d[2].toString() + ", " + 
+					d[1].toString() + ", " +
+					d[0].toString() + ")";
+
+				for (var i = 0; i < 3; i++) 
+					d[i] = Math.floor(d[i] / 25) * 2 + 1;
+
+				grid.d_controls[ name ] = "di = " +
+					d[2].toString() + ", dj = " + 
+					d[1].toString() + ", dk = " +
+					d[0].toString();
+
+				block.option_detail = d;
+
+				var c = grid.f_detail.add(grid.d_controls, name).listen();
+
+				grid.id_controls.push([grid.f_detail, c]);
+				
+				c.onFinishChange(function(value)
+				{ 
+					var numb = value.match(/\d+/g);
+						
+					if(!!numb && numb.length >= 3) {
+						block.option_detail = [ 
+							parseInt(numb[2]), 
+							parseInt(numb[1]), 
+							parseInt(numb[0]) ];
+					} else {
+						block.option_detail = [1, 1, 1];
+						value =	'di = 1, dj = 1, dk = 1';
+					}
+				});
+
+				if (block.z == loader.grid.length - 1) {
+					
+					grid.controls["all points"] = function() {
+						for ( var i = 0; i < grid['$items'].length; i++ )
+							grid['$items'][i].option_detail = [1, 1, 1];
+
+						for ( k in grid.d_controls )
+							grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
+					};
+
+					var c = grid.f_detail.add(grid.controls, "all points");
+
+					grid.id_controls.push([grid.f_detail, c]);
+				}
 			}
 
-			Text { text: " colors"; y: 2 }
+			GridLines
+			{
+				visible: block.option_visible
 
-			Picker { id: color_face_1; value: '#00ffff' }
+				data: loader.grid[ block.z ]
+				scale_coeff: loader.scale_coeff
 
-			Picker { id: color_face_2; value: '#ff00ff' }
+				detail: block.option_detail
+				
+				style: grid.style_default ? [] : grid.lines_style
+				
+				Component.onCompleted: makeLater(this);
+			}
 
-			Picker { id: color_face_3; value: '#ffff00' }
+			GridFaces
+			{
+				visible: block.option_visible
+
+				data: loader.grid[ block.z ]
+				scale_coeff: loader.scale_coeff
+
+				detail: block.option_detail
+
+				style: grid.style_default ? [] : grid.faces_style
+				
+				Component.onCompleted: makeLater(this);
+			}
+
+			Component.onCompleted: makeLater(this);
 		}
 	}
 }

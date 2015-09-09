@@ -1,7 +1,7 @@
 
 root = exports ? this
 
-root.gen_lines = (data, scale_coeff, detail, modes) ->
+root.gen_lines = (data, scale_coeff, detail, style, filter, filter_style) ->
 
 	k_size = k_last - k_first
 	j_size = j_last - j_first
@@ -11,7 +11,13 @@ root.gen_lines = (data, scale_coeff, detail, modes) ->
 	j_limit = Math.ceil(data[0].length / detail[1]) * detail[1]
 	i_limit = Math.ceil(data[0][0].length / detail[2]) * detail[2]
 
-	if modes.length < 4
+	if style.length < 3
+		style = [[], [], []]
+
+	if style[0].length < 3
+		style[0] = [true, true, true]
+
+	if style[1].length < 3
 		calc_color = (dir, k, j, i) ->
 
 			i_coeff = if dir == 1 then 0x88 else (i - k_first) / i_size * 0xff
@@ -19,24 +25,25 @@ root.gen_lines = (data, scale_coeff, detail, modes) ->
 			k_coeff = if dir == 3 then 0x88 else (k - k_first) / k_size * 0xff
 
 			(k_coeff << 16) + (j_coeff << 8) + i_coeff
-	else if modes[3].length > 2
-		calc_color = (dir, k, j, i) -> modes[3][dir]
+
+	else if style[1].length > 2
+		calc_color = (dir, k, j, i) -> style[1][dir - 1]
 	
-	if modes.length > 3 and modes[3].length > 0
-		line_dashed = modes[3][0]
+	if style.length > 2 and style[2].length > 0
+		line_dashed = style[2][0]
 	else
 		line_dashed = false
 	
-	if	modes.length > 4 and modes[4].length > 1
-		color_border = modes[4][1]
-		border_bold = modes[4][0]
+	if style.length > 2 and style[1].length > 3 and style[2].length > 1
+		color_border = style[1][3]
+		border_bold = style[2][1]
 	else
 		color_border = '#000000'
 		border_bold = true
 
 	# -------- first
 
-	if modes[0]
+	if style[0][0]
 		for k in [k_first..k_limit] by detail[0]
 			do (k) ->
 				k = k_last if k > k_last
@@ -67,7 +74,7 @@ root.gen_lines = (data, scale_coeff, detail, modes) ->
 
 	# -------- second
 
-	if modes[1]
+	if style[0][1]
 		for k in [k_first..k_limit] by detail[0]
 			do (k) ->
 				k = k_last if k > k_last
@@ -98,7 +105,7 @@ root.gen_lines = (data, scale_coeff, detail, modes) ->
 
 	# -------- third
 
-	if modes[2]
+	if style[0][2]
 		for j in [j_first..j_limit] by detail[1]
 			do(j) ->
 				j = j_last if j > j_last
@@ -127,8 +134,15 @@ root.gen_lines = (data, scale_coeff, detail, modes) ->
 						
 						add_line(pnts, scale_coeff, color, dashed, width)
 
+root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
+	
+	k_first = 0
+	j_first = 0
+	i_first = 0
 
-root.gen_surfaces = (data, scale_coeff, detail, modes) ->
+	k_last = data.length - 1
+	j_last = data[0].length - 1
+	i_last = data[0][0].length - 1
 
 	k_size = k_last - k_first
 	j_size = j_last - j_first
@@ -137,14 +151,6 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 	k_limit = Math.ceil(data.length / detail[0]) * detail[0]
 	j_limit = Math.ceil(data[0].length / detail[1]) * detail[1]
 	i_limit = Math.ceil(data[0][0].length / detail[2]) * detail[2]
-
-	calc_color = (k, j, i) ->
-		
-		k_coeff = (k - k_first) / k_size
-		j_coeff = (j - j_first) / j_size
-		i_coeff = (i - i_first) / i_size
-
-		((0xff * k_coeff) << 16) + ((0xff * j_coeff) << 8) + (0xff * i_coeff)
 	
 	k_lst_front = []
 	k_lst_back = []
@@ -183,13 +189,13 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 	i_lst_back.reverse()
 
-	if modes.length > 3 and modes[3].length > 0
-		opacity = modes[3][0]
+	if style.length > 2 and style[2].length > 0
+		opacity = style[2][0]
 	else
 		opacity = 0.5
 
-	if modes.length > 3 and modes[3].length > 3
-		color = [modes[3][1], modes[3][2], modes[3][3]]
+	if style.length > 1 and style[1].length > 2
+		color = style[1]
 	else
 		color = ['#00ffff', '#ff00ff', '#ffff00']
 
@@ -225,7 +231,7 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 							faces.push(face_0, face_1)
 
-			add_surface(vertices, scale_coeff, faces, color[0], opacity) if modes[0]
+			add_surface(vertices, scale_coeff, faces, color[0], opacity) if style[0][0]
 
 			#
 
@@ -263,7 +269,7 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 								faces.push(face_0, face_1)
 
-						add_surface(vertices, scale_coeff, faces, color[1], opacity) if modes[1]
+						add_surface(vertices, scale_coeff, faces, color[1], opacity) if style[0][1]
 
 						#
 
@@ -292,29 +298,29 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 									faces = [face_0, face_1]
 
-									add_surface(vertices, scale_coeff, faces, color[2], opacity) if modes[2]
+									add_surface(vertices, scale_coeff, faces, color[2], opacity) if style[0][2]
 			# ---
 
 			k = k_lst_front[k_index]
 
-			if k_index < k_lst_front.length - 1 
+			if k_index > 0
 
 				for j, j_index in j_lst_front
 					do (j) ->
 
 						# ---
 
-						if j_index < j_lst_front.length - 1 
+						if j_index > 0
 
 							for i, i_index in i_lst_front
 								do (i) ->
 
 									vertices = []
 
-									for k in [k_lst_front[k_index], k_lst_front[k_index + 1]]
+									for k in [k_lst_front[k_index - 1], k_lst_front[k_index]]
 										do(k) ->
-										
-											for j in [j_lst_front[j_index], j_lst_front[j_index + 1]]
+
+											for j in [j_lst_front[j_index - 1], j_lst_front[j_index]]
 												do (j) ->
 
 													vertices.push(
@@ -329,12 +335,12 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 									faces = [face_0, face_1]
 
-									add_surface(vertices, scale_coeff, faces, color[2], opacity) if modes[2]
+									add_surface(vertices, scale_coeff, faces, color[2], opacity) if style[0][2]
 						# ---
 
 						vertices = []
 
-						for k in [k_lst_back[k_index], k_lst_back[k_index + 1]]
+						for k in [k_lst_back[k_index - 1], k_lst_back[k_index]]
 							do(k) ->
 						
 								for i in [i_first..i_last]
@@ -361,7 +367,7 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 								faces.push(face_0, face_1)
 
-						add_surface(vertices, scale_coeff, faces, color[1], opacity) if modes[1]
+						add_surface(vertices, scale_coeff, faces, color[1], opacity) if style[0][1]
 			# ---
 
 			k = k_lst_front[k_index]
@@ -396,22 +402,7 @@ root.gen_surfaces = (data, scale_coeff, detail, modes) ->
 
 							faces.push(face_0, face_1)
 
-			add_surface(vertices, scale_coeff, faces, color[0], opacity) if modes[0]
-
-root.gen_spheres = (data, scale_coeff, detail, range, options, mode) ->
-
-	calc_color = (k, j, i) ->
-		((if k == k_first then 0x00 else 0xff) << 16) + ((if j == j_first then 0x00 else 0xff) << 8) + (if i == i_first then 0x00 else 0xff)
-
-	for k in [k_first, k_last]
-		do (k) ->
-			for j in [j_first, j_last]
-				do (j) ->
-					for i in [i_first, i_last]
-						do (i) ->
-							position = data[k][j][i][0..2]
-							color = calc_color(k, j, i)
-							add_sphere(position, scale_coeff, color, 0.1)
+			add_surface(vertices, scale_coeff, faces, color[0], opacity) if style[0][0]
 
 root.add_line = (pnts, scale_coeff, color, dashed, width = 1) ->
 	
@@ -438,8 +429,8 @@ root.add_line = (pnts, scale_coeff, color, dashed, width = 1) ->
 	sceneObject.scale.y = scale_coeff
 	sceneObject.scale.z = scale_coeff
 
-	obj.add( sceneObject )
-
+	root.lines.add( sceneObject )
+	
 root.add_surface = (vertices, scale_coeff, faces, color, opacity) ->
 	
 	geometry = new THREE.Geometry()
@@ -459,28 +450,16 @@ root.add_surface = (vertices, scale_coeff, faces, color, opacity) ->
 	sceneObject.scale.y = scale_coeff
 	sceneObject.scale.z = scale_coeff
 
-	obj.add( sceneObject )
+	root.faces.add( sceneObject )
 
-root.add_sphere = (position, scale_coeff, color, size) ->
-	geometry = new THREE.SphereBufferGeometry( size )
-	material = new THREE.MeshBasicMaterial( { color: color } )
-	
-	sceneObject = new THREE.Mesh( geometry, material )
-	
-	sceneObject.position.x = position[0] * scale_coeff
-	sceneObject.position.y = position[1] * scale_coeff
-	sceneObject.position.z = position[2] * scale_coeff
+root.GridLines =
 
-	obj.add( sceneObject )
+	init: (data, scale_coeff, detail, style, filter, filter_style) ->
 
-root.Smth =
+		root.lines = new THREE.Object3D()
 
-	init: (data, scale_coeff, detail, modes, range, range_modes) -> 
-
-		root.obj = new THREE.Object3D()
-
-		if modes.length == 0
-			modes = [ [true, true, true], [false, false, false], [true] ]
+		if style.length < 3
+			style = [[], [], []]
 
 		[root.k_first, root.j_first, root.i_first] = [0, 0, 0]
 
@@ -488,17 +467,35 @@ root.Smth =
 		root.j_last = data[0].length - 1
 		root.i_last = data[0][0].length - 1
 
-		if modes[2][0]
-			gen_spheres(data, scale_coeff)
+		gen_lines(data, scale_coeff, detail, style, filter, filter_style)
 
-		gen_surfaces(data, scale_coeff, detail, modes[1])
+		root.lines
 
-		gen_lines(data, scale_coeff, detail, modes[0])
+root.GridFaces = 
+	init: (data, scale_coeff, detail, style, filter, filter_style) ->
 
-		console.log("Detail: ", detail)
-		console.log("Objects:", root.obj.children.length)
-		console.log("ok :D")
+		root.faces = new THREE.Object3D()
 
-		root.obj
+		if style.length < 3
+			style = [[], [], []]
 
-console.log("Smth init")
+		if filter_style.length < 3
+			filter_style = [[], [], []]
+
+		if style[0].length < 3
+			style[0] = [false, false, false]
+		if style[1].length < 3
+			style[1] = ["#00ffff", "#ff00ff", "#ffff00"]
+		if style[2].length < 1
+			style[2] = [0.2]
+		
+		if filter_style[0].length < 3
+			filter_style[0] = [true, true, true]
+		if filter_style[1].length < 3
+			filter_style[1] = ["#00ffff", "#ff00ff", "#ffff00"]
+		if filter_style[2].length < 1
+			filter_style[2] = [0.2]
+
+		gen_surfaces(data, scale_coeff, detail, style, filter, filter_style)
+
+		root.faces

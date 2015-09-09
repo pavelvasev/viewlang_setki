@@ -4,7 +4,7 @@
 
   root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
-  root.gen_lines = function(data, scale_coeff, detail, modes) {
+  root.gen_lines = function(data, scale_coeff, detail, style, filter, filter_style) {
     var border_bold, calc_color, color_border, fn, fn1, i_limit, i_size, j, j_limit, j_size, k, k_limit, k_size, l, line_dashed, m, n, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7, ref8, results;
     k_size = k_last - k_first;
     j_size = j_last - j_first;
@@ -12,7 +12,13 @@
     k_limit = Math.ceil(data.length / detail[0]) * detail[0];
     j_limit = Math.ceil(data[0].length / detail[1]) * detail[1];
     i_limit = Math.ceil(data[0][0].length / detail[2]) * detail[2];
-    if (modes.length < 4) {
+    if (style.length < 3) {
+      style = [[], [], []];
+    }
+    if (style[0].length < 3) {
+      style[0] = [true, true, true];
+    }
+    if (style[1].length < 3) {
       calc_color = function(dir, k, j, i) {
         var i_coeff, j_coeff, k_coeff;
         i_coeff = dir === 1 ? 0x88 : (i - k_first) / i_size * 0xff;
@@ -20,24 +26,24 @@
         k_coeff = dir === 3 ? 0x88 : (k - k_first) / k_size * 0xff;
         return (k_coeff << 16) + (j_coeff << 8) + i_coeff;
       };
-    } else if (modes[3].length > 2) {
+    } else if (style[1].length > 2) {
       calc_color = function(dir, k, j, i) {
-        return modes[3][dir];
+        return style[1][dir - 1];
       };
     }
-    if (modes.length > 3 && modes[3].length > 0) {
-      line_dashed = modes[3][0];
+    if (style.length > 2 && style[2].length > 0) {
+      line_dashed = style[2][0];
     } else {
       line_dashed = false;
     }
-    if (modes.length > 4 && modes[4].length > 1) {
-      color_border = modes[4][1];
-      border_bold = modes[4][0];
+    if (style.length > 2 && style[1].length > 3 && style[2].length > 1) {
+      color_border = style[1][3];
+      border_bold = style[2][1];
     } else {
       color_border = '#000000';
       border_bold = true;
     }
-    if (modes[0]) {
+    if (style[0][0]) {
       fn = function(k) {
         var j, m, ref3, ref4, ref5, results;
         if (k > k_last) {
@@ -78,7 +84,7 @@
         fn(k);
       }
     }
-    if (modes[1]) {
+    if (style[0][1]) {
       fn1 = function(k) {
         var i, n, ref6, ref7, ref8, results;
         if (k > k_last) {
@@ -119,7 +125,7 @@
         fn1(k);
       }
     }
-    if (modes[2]) {
+    if (style[0][2]) {
       results = [];
       for (j = n = ref6 = j_first, ref7 = j_limit, ref8 = detail[1]; ref8 > 0 ? n <= ref7 : n >= ref7; j = n += ref8) {
         results.push((function(j) {
@@ -163,21 +169,20 @@
     }
   };
 
-  root.gen_surfaces = function(data, scale_coeff, detail, modes) {
-    var calc_color, color, fn, fn1, fn2, i, i_limit, i_lst_back, i_lst_front, i_size, j, j_limit, j_lst_back, j_lst_front, j_size, k, k_index, k_limit, k_lst_back, k_lst_front, k_size, l, len, m, n, o, opacity, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7, ref8, results;
+  root.gen_surfaces = function(data, scale_coeff, detail, style, filter, filter_style) {
+    var color, fn, fn1, fn2, i, i_first, i_last, i_limit, i_lst_back, i_lst_front, i_size, j, j_first, j_last, j_limit, j_lst_back, j_lst_front, j_size, k, k_first, k_index, k_last, k_limit, k_lst_back, k_lst_front, k_size, l, len, m, n, o, opacity, ref, ref1, ref2, ref3, ref4, ref5, ref6, ref7, ref8, results;
+    k_first = 0;
+    j_first = 0;
+    i_first = 0;
+    k_last = data.length - 1;
+    j_last = data[0].length - 1;
+    i_last = data[0][0].length - 1;
     k_size = k_last - k_first;
     j_size = j_last - j_first;
     i_size = i_last - i_first;
     k_limit = Math.ceil(data.length / detail[0]) * detail[0];
     j_limit = Math.ceil(data[0].length / detail[1]) * detail[1];
     i_limit = Math.ceil(data[0][0].length / detail[2]) * detail[2];
-    calc_color = function(k, j, i) {
-      var i_coeff, j_coeff, k_coeff;
-      k_coeff = (k - k_first) / k_size;
-      j_coeff = (j - j_first) / j_size;
-      i_coeff = (i - i_first) / i_size;
-      return ((0xff * k_coeff) << 16) + ((0xff * j_coeff) << 8) + (0xff * i_coeff);
-    };
     k_lst_front = [];
     k_lst_back = [];
     fn = function(k) {
@@ -217,13 +222,13 @@
       fn2(i);
     }
     i_lst_back.reverse();
-    if (modes.length > 3 && modes[3].length > 0) {
-      opacity = modes[3][0];
+    if (style.length > 2 && style[2].length > 0) {
+      opacity = style[2][0];
     } else {
       opacity = 0.5;
     }
-    if (modes.length > 3 && modes[3].length > 3) {
-      color = [modes[3][1], modes[3][2], modes[3][3]];
+    if (style.length > 1 && style[1].length > 2) {
+      color = style[1];
     } else {
       color = ['#00ffff', '#ff00ff', '#ffff00'];
     }
@@ -265,7 +270,7 @@
         for (j = q = 0, ref11 = j_size - 1; 0 <= ref11 ? q <= ref11 : q >= ref11; j = 0 <= ref11 ? ++q : --q) {
           fn4(j);
         }
-        if (modes[0]) {
+        if (style[0][0]) {
           add_surface(vertices, scale_coeff, faces, color[0], opacity);
         }
         if (k_index < k_lst_back.length - 1) {
@@ -299,7 +304,7 @@
             for (i = t = 0, ref13 = i_size - 1; 0 <= ref13 ? t <= ref13 : t >= ref13; i = 0 <= ref13 ? ++t : --t) {
               fn7(i, 0);
             }
-            if (modes[1]) {
+            if (style[0][1]) {
               add_surface(vertices, scale_coeff, faces, color[1], opacity);
             }
             if (j_index < j_lst_back.length - 1) {
@@ -329,7 +334,7 @@
                   face_0 = new THREE.Face3(2, 1, 0);
                   face_1 = new THREE.Face3(3, 1, 2);
                   faces = [face_0, face_1];
-                  if (modes[2]) {
+                  if (style[0][2]) {
                     return add_surface(vertices, scale_coeff, faces, color[2], opacity);
                   }
                 })(i));
@@ -343,17 +348,17 @@
           }
         }
         k = k_lst_front[k_index];
-        if (k_index < k_lst_front.length - 1) {
+        if (k_index > 0) {
           fn6 = function(j) {
             var fn7, fn8, fn9, i_index, len3, len4, ref12, ref13, t, u, v;
-            if (j_index < j_lst_front.length - 1) {
+            if (j_index > 0) {
               fn7 = function(i) {
                 var face_0, face_1, fn8, len4, ref12, u;
                 vertices = [];
-                ref12 = [k_lst_front[k_index], k_lst_front[k_index + 1]];
+                ref12 = [k_lst_front[k_index - 1], k_lst_front[k_index]];
                 fn8 = function(k) {
                   var len5, ref13, results1, v;
-                  ref13 = [j_lst_front[j_index], j_lst_front[j_index + 1]];
+                  ref13 = [j_lst_front[j_index - 1], j_lst_front[j_index]];
                   results1 = [];
                   for (v = 0, len5 = ref13.length; v < len5; v++) {
                     j = ref13[v];
@@ -370,7 +375,7 @@
                 face_0 = new THREE.Face3(0, 1, 2);
                 face_1 = new THREE.Face3(2, 1, 3);
                 faces = [face_0, face_1];
-                if (modes[2]) {
+                if (style[0][2]) {
                   return add_surface(vertices, scale_coeff, faces, color[2], opacity);
                 }
               };
@@ -380,7 +385,7 @@
               }
             }
             vertices = [];
-            ref12 = [k_lst_back[k_index], k_lst_back[k_index + 1]];
+            ref12 = [k_lst_back[k_index - 1], k_lst_back[k_index]];
             fn8 = function(k) {
               var ref13, ref14, results1, v;
               results1 = [];
@@ -407,7 +412,7 @@
             for (i = v = 0, ref13 = i_size - 1; 0 <= ref13 ? v <= ref13 : v >= ref13; i = 0 <= ref13 ? ++v : --v) {
               fn9(i, 0);
             }
-            if (modes[1]) {
+            if (style[0][1]) {
               return add_surface(vertices, scale_coeff, faces, color[1], opacity);
             }
           };
@@ -450,46 +455,9 @@
         for (j = u = 0, ref14 = j_size - 1; 0 <= ref14 ? u <= ref14 : u >= ref14; j = 0 <= ref14 ? ++u : --u) {
           fn8(j);
         }
-        if (modes[0]) {
+        if (style[0][0]) {
           return add_surface(vertices, scale_coeff, faces, color[0], opacity);
         }
-      })(k));
-    }
-    return results;
-  };
-
-  root.gen_spheres = function(data, scale_coeff, detail, range, options, mode) {
-    var calc_color, k, l, len, ref, results;
-    calc_color = function(k, j, i) {
-      return ((k === k_first ? 0x00 : 0xff) << 16) + ((j === j_first ? 0x00 : 0xff) << 8) + (i === i_first ? 0x00 : 0xff);
-    };
-    ref = [k_first, k_last];
-    results = [];
-    for (l = 0, len = ref.length; l < len; l++) {
-      k = ref[l];
-      results.push((function(k) {
-        var j, len1, m, ref1, results1;
-        ref1 = [j_first, j_last];
-        results1 = [];
-        for (m = 0, len1 = ref1.length; m < len1; m++) {
-          j = ref1[m];
-          results1.push((function(j) {
-            var i, len2, n, ref2, results2;
-            ref2 = [i_first, i_last];
-            results2 = [];
-            for (n = 0, len2 = ref2.length; n < len2; n++) {
-              i = ref2[n];
-              results2.push((function(i) {
-                var color, position;
-                position = data[k][j][i].slice(0, 3);
-                color = calc_color(k, j, i);
-                return add_sphere(position, scale_coeff, color, 0.1);
-              })(i));
-            }
-            return results2;
-          })(j));
-        }
-        return results1;
       })(k));
     }
     return results;
@@ -521,7 +489,7 @@
     sceneObject.scale.x = scale_coeff;
     sceneObject.scale.y = scale_coeff;
     sceneObject.scale.z = scale_coeff;
-    return obj.add(sceneObject);
+    return root.lines.add(sceneObject);
   };
 
   root.add_surface = function(vertices, scale_coeff, faces, color, opacity) {
@@ -540,45 +508,55 @@
     sceneObject.scale.x = scale_coeff;
     sceneObject.scale.y = scale_coeff;
     sceneObject.scale.z = scale_coeff;
-    return obj.add(sceneObject);
+    return root.faces.add(sceneObject);
   };
 
-  root.add_sphere = function(position, scale_coeff, color, size) {
-    var geometry, material, sceneObject;
-    geometry = new THREE.SphereBufferGeometry(size);
-    material = new THREE.MeshBasicMaterial({
-      color: color
-    });
-    sceneObject = new THREE.Mesh(geometry, material);
-    sceneObject.position.x = position[0] * scale_coeff;
-    sceneObject.position.y = position[1] * scale_coeff;
-    sceneObject.position.z = position[2] * scale_coeff;
-    return obj.add(sceneObject);
-  };
-
-  root.Smth = {
-    init: function(data, scale_coeff, detail, modes, range, range_modes) {
+  root.GridLines = {
+    init: function(data, scale_coeff, detail, style, filter, filter_style) {
       var ref;
-      root.obj = new THREE.Object3D();
-      if (modes.length === 0) {
-        modes = [[true, true, true], [false, false, false], [true]];
+      root.lines = new THREE.Object3D();
+      if (style.length < 3) {
+        style = [[], [], []];
       }
       ref = [0, 0, 0], root.k_first = ref[0], root.j_first = ref[1], root.i_first = ref[2];
       root.k_last = data.length - 1;
       root.j_last = data[0].length - 1;
       root.i_last = data[0][0].length - 1;
-      if (modes[2][0]) {
-        gen_spheres(data, scale_coeff);
-      }
-      gen_surfaces(data, scale_coeff, detail, modes[1]);
-      gen_lines(data, scale_coeff, detail, modes[0]);
-      console.log("Detail: ", detail);
-      console.log("Objects:", root.obj.children.length);
-      console.log("ok :D");
-      return root.obj;
+      gen_lines(data, scale_coeff, detail, style, filter, filter_style);
+      return root.lines;
     }
   };
 
-  console.log("Smth init");
+  root.GridFaces = {
+    init: function(data, scale_coeff, detail, style, filter, filter_style) {
+      root.faces = new THREE.Object3D();
+      if (style.length < 3) {
+        style = [[], [], []];
+      }
+      if (filter_style.length < 3) {
+        filter_style = [[], [], []];
+      }
+      if (style[0].length < 3) {
+        style[0] = [false, false, false];
+      }
+      if (style[1].length < 3) {
+        style[1] = ["#00ffff", "#ff00ff", "#ffff00"];
+      }
+      if (style[2].length < 1) {
+        style[2] = [0.2];
+      }
+      if (filter_style[0].length < 3) {
+        filter_style[0] = [true, true, true];
+      }
+      if (filter_style[1].length < 3) {
+        filter_style[1] = ["#00ffff", "#ff00ff", "#ffff00"];
+      }
+      if (filter_style[2].length < 1) {
+        filter_style[2] = [0.2];
+      }
+      gen_surfaces(data, scale_coeff, detail, style, filter, filter_style);
+      return root.faces;
+    }
+  };
 
 }).call(this);

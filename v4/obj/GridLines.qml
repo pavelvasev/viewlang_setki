@@ -1,14 +1,14 @@
 SceneObject
 {
-	id: smth
+	id: gridlines
 
 	property var data
 	property var scale_coeff: 1
-	property var detail: [1, 1, 1]
-	property var modes: []
 
-	property var range: [] 
-	property var range_modes: []
+	property var detail: [1, 1, 1]
+	property var style: []
+	property var filter: []
+	property var fstyle: []
 
 	function make3d() {
 
@@ -16,12 +16,12 @@ SceneObject
 		
 		clear();
 
-		if ( data.length && script_flag ) {
+		if ( data.length && script_grid_flag ) {
 
-			this.sceneObject = Smth.init(
+			this.sceneObject = GridLines.init(
 					data, scale_coeff, 
-					detail, modes, 
-					range, range_modes
+					detail, style,
+					filter, fstyle
 				);
 
 			scene.add(this.sceneObject);
@@ -38,9 +38,10 @@ SceneObject
 		}
 	}
 
-	onDetailChanged: makeLater(this);
-
-	onModesChanged: makeLater(this);
+	onDetailChanged: makeLater(this);	
+	onStyleChanged: makeLater(this);
+	onFilterChanged: makeLater(this);
+	onFstyleChanged: makeLater(this);
 
 	function clear() {
 		clearobj( this.sceneObject ); 
