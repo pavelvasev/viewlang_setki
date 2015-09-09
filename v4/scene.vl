@@ -130,6 +130,7 @@ Scene
 				gui = new dat.GUI( { width: 350 } );
 
 				f_blocks = gui.addFolder('Blocks');
+				f_blocks.open();
 
 				f_visible = f_blocks.addFolder("Visible");
 				f_detail = f_blocks.addFolder("Detail");
