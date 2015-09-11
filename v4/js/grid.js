@@ -189,8 +189,10 @@
       if (k > k_last) {
         k = k_last;
       }
-      k_lst_front.push(k);
-      return k_lst_back.push(k);
+      if (k !== k_lst_front[k_lst_front.length - 1]) {
+        k_lst_front.push(k);
+        return k_lst_back.push(k);
+      }
     };
     for (k = l = ref = k_first, ref1 = k_limit, ref2 = detail[0]; ref2 > 0 ? l <= ref1 : l >= ref1; k = l += ref2) {
       fn(k);
@@ -202,8 +204,10 @@
       if (j > j_last) {
         j = j_last;
       }
-      j_lst_front.push(j);
-      return j_lst_back.push(j);
+      if (j !== j_lst_front[j_lst_front.length - 1]) {
+        j_lst_front.push(j);
+        return j_lst_back.push(j);
+      }
     };
     for (j = m = ref3 = j_first, ref4 = j_limit, ref5 = detail[1]; ref5 > 0 ? m <= ref4 : m >= ref4; j = m += ref5) {
       fn1(j);
@@ -215,8 +219,10 @@
       if (i > i_last) {
         i = i_last;
       }
-      i_lst_front.push(i);
-      return i_lst_back.push(i);
+      if (i !== i_lst_front[i_lst_front.length - 1]) {
+        i_lst_front.push(i);
+        return i_lst_back.push(i);
+      }
     };
     for (i = n = ref6 = i_first, ref7 = i_limit, ref8 = detail[2]; ref8 > 0 ? n <= ref7 : n >= ref7; i = n += ref8) {
       fn2(i);
@@ -275,65 +281,85 @@
         }
         if (k_index < k_lst_back.length - 1) {
           fn5 = function(j) {
-            var fn6, fn7, i_index, len2, len3, ref12, ref13, results1, s, t, u;
+            var fn6, fn7, i_index, k_index_size, len2, ref12, ref13, ref14, results1, s, t, u;
             vertices = [];
-            ref12 = [k_lst_back[k_index], k_lst_back[k_index + 1]];
             fn6 = function(k) {
-              var ref13, ref14, results1, t;
+              var ref14, ref15, results1, t;
               results1 = [];
-              for (i = t = ref13 = i_first, ref14 = i_last; ref13 <= ref14 ? t <= ref14 : t >= ref14; i = ref13 <= ref14 ? ++t : --t) {
+              for (i = t = ref14 = i_first, ref15 = i_last; ref14 <= ref15 ? t <= ref15 : t >= ref15; i = ref14 <= ref15 ? ++t : --t) {
                 results1.push((function(i) {
                   return vertices.push(new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]));
                 })(i));
               }
               return results1;
             };
-            for (s = 0, len2 = ref12.length; s < len2; s++) {
-              k = ref12[s];
+            for (k = s = ref12 = k_lst_back[k_index + 1], ref13 = k_lst_back[k_index]; ref12 <= ref13 ? s <= ref13 : s >= ref13; k = ref12 <= ref13 ? ++s : --s) {
               fn6(k);
             }
+            k_index_size = k_lst_back[k_index] - k_lst_back[k_index + 1];
             faces = [];
-            fn7 = function(i, k) {
-              var a, b, face_0, face_1;
-              a = (i_size + 1) * k + i;
-              b = (i_size + 1) * (k + 1) + i;
-              face_0 = new THREE.Face3(b, a + 1, a);
-              face_1 = new THREE.Face3(b + 1, a + 1, b);
-              return faces.push(face_0, face_1);
+            fn7 = function(k) {
+              var ref15, results1, u;
+              results1 = [];
+              for (i = u = 0, ref15 = i_size - 1; 0 <= ref15 ? u <= ref15 : u >= ref15; i = 0 <= ref15 ? ++u : --u) {
+                results1.push((function(i) {
+                  var a, b, face_0, face_1;
+                  a = (i_size + 1) * k + i;
+                  b = (i_size + 1) * (k + 1) + i;
+                  face_0 = new THREE.Face3(a, a + 1, b);
+                  face_1 = new THREE.Face3(b, a + 1, b + 1);
+                  return faces.push(face_0, face_1);
+                })(i));
+              }
+              return results1;
             };
-            for (i = t = 0, ref13 = i_size - 1; 0 <= ref13 ? t <= ref13 : t >= ref13; i = 0 <= ref13 ? ++t : --t) {
-              fn7(i, 0);
+            for (k = t = 0, ref14 = k_index_size - 1; 0 <= ref14 ? t <= ref14 : t >= ref14; k = 0 <= ref14 ? ++t : --t) {
+              fn7(k);
             }
             if (style[0][1]) {
               add_surface(vertices, scale_coeff, faces, color[1], opacity);
             }
             if (j_index < j_lst_back.length - 1) {
               results1 = [];
-              for (i_index = u = 0, len3 = i_lst_back.length; u < len3; i_index = ++u) {
+              for (i_index = u = 0, len2 = i_lst_back.length; u < len2; i_index = ++u) {
                 i = i_lst_back[i_index];
                 results1.push((function(i) {
-                  var face_0, face_1, fn8, len4, ref14, v;
+                  var fn8, fn9, j_index_size, ref15, ref16, ref17, v, w;
                   vertices = [];
-                  ref14 = [k_lst_back[k_index], k_lst_back[k_index + 1]];
                   fn8 = function(k) {
-                    var len5, ref15, results2, w;
-                    ref15 = [j_lst_back[j_index], j_lst_back[j_index + 1]];
+                    var ref17, ref18, results2, w;
                     results2 = [];
-                    for (w = 0, len5 = ref15.length; w < len5; w++) {
-                      j = ref15[w];
+                    for (j = w = ref17 = j_lst_back[j_index + 1], ref18 = j_lst_back[j_index]; ref17 <= ref18 ? w <= ref18 : w >= ref18; j = ref17 <= ref18 ? ++w : --w) {
                       results2.push((function(j) {
                         return vertices.push(new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]));
                       })(j));
                     }
                     return results2;
                   };
-                  for (v = 0, len4 = ref14.length; v < len4; v++) {
-                    k = ref14[v];
+                  for (k = v = ref15 = k_lst_back[k_index + 1], ref16 = k_lst_back[k_index]; ref15 <= ref16 ? v <= ref16 : v >= ref16; k = ref15 <= ref16 ? ++v : --v) {
                     fn8(k);
                   }
-                  face_0 = new THREE.Face3(2, 1, 0);
-                  face_1 = new THREE.Face3(3, 1, 2);
-                  faces = [face_0, face_1];
+                  k_index_size = k_lst_back[k_index] - k_lst_back[k_index + 1];
+                  j_index_size = j_lst_back[j_index] - j_lst_back[j_index + 1];
+                  faces = [];
+                  fn9 = function(k) {
+                    var ref18, results2, x;
+                    results2 = [];
+                    for (j = x = 0, ref18 = j_index_size - 1; 0 <= ref18 ? x <= ref18 : x >= ref18; j = 0 <= ref18 ? ++x : --x) {
+                      results2.push((function(j) {
+                        var a, b, face_0, face_1;
+                        a = (j_index_size + 1) * k + j;
+                        b = (j_index_size + 1) * (k + 1) + j;
+                        face_0 = new THREE.Face3(b, a + 1, a);
+                        face_1 = new THREE.Face3(b + 1, a + 1, b);
+                        return faces.push(face_0, face_1);
+                      })(j));
+                    }
+                    return results2;
+                  };
+                  for (k = w = 0, ref17 = k_index_size - 1; 0 <= ref17 ? w <= ref17 : w >= ref17; k = 0 <= ref17 ? ++w : --w) {
+                    fn9(k);
+                  }
                   if (style[0][2]) {
                     return add_surface(vertices, scale_coeff, faces, color[2], opacity);
                   }
@@ -350,31 +376,45 @@
         k = k_lst_front[k_index];
         if (k_index > 0) {
           fn6 = function(j) {
-            var fn7, fn8, fn9, i_index, len3, len4, ref12, ref13, t, u, v;
+            var fn7, fn8, fn9, i_index, k_index_size, len3, ref12, ref13, ref14, t, u, v;
             if (j_index > 0) {
               fn7 = function(i) {
-                var face_0, face_1, fn8, len4, ref12, u;
+                var fn8, fn9, j_index_size, k_index_size, ref12, ref13, ref14, u, v;
                 vertices = [];
-                ref12 = [k_lst_front[k_index - 1], k_lst_front[k_index]];
                 fn8 = function(k) {
-                  var len5, ref13, results1, v;
-                  ref13 = [j_lst_front[j_index - 1], j_lst_front[j_index]];
+                  var ref14, ref15, results1, v;
                   results1 = [];
-                  for (v = 0, len5 = ref13.length; v < len5; v++) {
-                    j = ref13[v];
+                  for (j = v = ref14 = j_lst_front[j_index - 1], ref15 = j_lst_front[j_index]; ref14 <= ref15 ? v <= ref15 : v >= ref15; j = ref14 <= ref15 ? ++v : --v) {
                     results1.push((function(j) {
                       return vertices.push(new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]));
                     })(j));
                   }
                   return results1;
                 };
-                for (u = 0, len4 = ref12.length; u < len4; u++) {
-                  k = ref12[u];
+                for (k = u = ref12 = k_lst_front[k_index - 1], ref13 = k_lst_front[k_index]; ref12 <= ref13 ? u <= ref13 : u >= ref13; k = ref12 <= ref13 ? ++u : --u) {
                   fn8(k);
                 }
-                face_0 = new THREE.Face3(0, 1, 2);
-                face_1 = new THREE.Face3(2, 1, 3);
-                faces = [face_0, face_1];
+                k_index_size = k_lst_front[k_index] - k_lst_front[k_index - 1];
+                j_index_size = j_lst_front[j_index] - j_lst_front[j_index - 1];
+                faces = [];
+                fn9 = function(k) {
+                  var ref15, results1, w;
+                  results1 = [];
+                  for (j = w = 0, ref15 = j_index_size - 1; 0 <= ref15 ? w <= ref15 : w >= ref15; j = 0 <= ref15 ? ++w : --w) {
+                    results1.push((function(j) {
+                      var a, b, face_0, face_1;
+                      a = (j_index_size + 1) * k + j;
+                      b = (j_index_size + 1) * (k + 1) + j;
+                      face_0 = new THREE.Face3(a, a + 1, b);
+                      face_1 = new THREE.Face3(b, a + 1, b + 1);
+                      return faces.push(face_0, face_1);
+                    })(j));
+                  }
+                  return results1;
+                };
+                for (k = v = 0, ref14 = k_index_size - 1; 0 <= ref14 ? v <= ref14 : v >= ref14; k = 0 <= ref14 ? ++v : --v) {
+                  fn9(k);
+                }
                 if (style[0][2]) {
                   return add_surface(vertices, scale_coeff, faces, color[2], opacity);
                 }
@@ -384,33 +424,40 @@
                 fn7(i);
               }
             }
+            j = j_lst_front[j_index];
             vertices = [];
-            ref12 = [k_lst_back[k_index - 1], k_lst_back[k_index]];
             fn8 = function(k) {
-              var ref13, ref14, results1, v;
+              var ref14, ref15, results1, v;
               results1 = [];
-              for (i = v = ref13 = i_first, ref14 = i_last; ref13 <= ref14 ? v <= ref14 : v >= ref14; i = ref13 <= ref14 ? ++v : --v) {
+              for (i = v = ref14 = i_first, ref15 = i_last; ref14 <= ref15 ? v <= ref15 : v >= ref15; i = ref14 <= ref15 ? ++v : --v) {
                 results1.push((function(i) {
                   return vertices.push(new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]));
                 })(i));
               }
               return results1;
             };
-            for (u = 0, len4 = ref12.length; u < len4; u++) {
-              k = ref12[u];
+            for (k = u = ref12 = k_lst_back[k_index], ref13 = k_lst_back[k_index - 1]; ref12 <= ref13 ? u <= ref13 : u >= ref13; k = ref12 <= ref13 ? ++u : --u) {
               fn8(k);
             }
+            k_index_size = k_lst_back[k_index - 1] - k_lst_back[k_index];
             faces = [];
-            fn9 = function(i, k) {
-              var a, b, face_0, face_1;
-              a = (i_size + 1) * k + i;
-              b = (i_size + 1) * (k + 1) + i;
-              face_0 = new THREE.Face3(a, a + 1, b);
-              face_1 = new THREE.Face3(b, a + 1, b + 1);
-              return faces.push(face_0, face_1);
+            fn9 = function(k) {
+              var ref15, results1, w;
+              results1 = [];
+              for (i = w = 0, ref15 = i_size - 1; 0 <= ref15 ? w <= ref15 : w >= ref15; i = 0 <= ref15 ? ++w : --w) {
+                results1.push((function(i) {
+                  var a, b, face_0, face_1;
+                  a = (i_size + 1) * k + i;
+                  b = (i_size + 1) * (k + 1) + i;
+                  face_0 = new THREE.Face3(b, a + 1, a);
+                  face_1 = new THREE.Face3(b + 1, a + 1, b);
+                  return faces.push(face_0, face_1);
+                })(i));
+              }
+              return results1;
             };
-            for (i = v = 0, ref13 = i_size - 1; 0 <= ref13 ? v <= ref13 : v >= ref13; i = 0 <= ref13 ? ++v : --v) {
-              fn9(i, 0);
+            for (k = v = 0, ref14 = k_index_size - 1; 0 <= ref14 ? v <= ref14 : v >= ref14; k = 0 <= ref14 ? ++v : --v) {
+              fn9(k);
             }
             if (style[0][1]) {
               return add_surface(vertices, scale_coeff, faces, color[1], opacity);

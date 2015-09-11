@@ -159,8 +159,9 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 		do (k) ->
 			k = k_last if k > k_last
 
-			k_lst_front.push(k)
-			k_lst_back.push(k)
+			if k != k_lst_front[k_lst_front.length - 1]
+				k_lst_front.push(k)
+				k_lst_back.push(k)
 
 	k_lst_back.reverse()
 
@@ -171,8 +172,9 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 		do (j) ->
 			j = j_last if j > j_last
 
-			j_lst_front.push(j)
-			j_lst_back.push(j)
+			if j != j_lst_front[j_lst_front.length - 1]
+				j_lst_front.push(j)
+				j_lst_back.push(j)
 
 	j_lst_back.reverse()
 
@@ -184,8 +186,9 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 		do (i) ->
 			i = i_last if i > i_last
 
-			i_lst_front.push(i)
-			i_lst_back.push(i)
+			if i != i_lst_front[i_lst_front.length - 1]
+				i_lst_front.push(i)
+				i_lst_back.push(i)
 
 	i_lst_back.reverse()
 
@@ -242,7 +245,8 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 
 						vertices = []
 
-						for k in [k_lst_back[k_index], k_lst_back[k_index + 1]]
+						for k in [k_lst_back[k_index + 1]..k_lst_back[k_index]]
+						
 							do(k) ->
 						
 								for i in [i_first..i_last]
@@ -255,19 +259,22 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 												data[k][j][i][2])
 											)
 
+						k_index_size = k_lst_back[k_index] - k_lst_back[k_index + 1]
+
 						faces = []
 
-						for i in [0..i_size - 1]
-							do (i, k = 0) ->
+						for k in [0..k_index_size - 1]
+							do (k) ->
+								for i in [0..i_size - 1]
+									do (i) ->
 
-								a = (i_size + 1) * k + i
-								b = (i_size + 1) * (k + 1) + i
-												
-												
-								face_0 = new THREE.Face3(b, a + 1, a)
-								face_1 = new THREE.Face3(b + 1, a + 1, b)
+										a = (i_size + 1) * k + i
+										b = (i_size + 1) * (k + 1) + i
 
-								faces.push(face_0, face_1)
+										face_0 = new THREE.Face3(a, a + 1, b)
+										face_1 = new THREE.Face3(b, a + 1, b + 1)
+
+										faces.push(face_0, face_1)
 
 						add_surface(vertices, scale_coeff, faces, color[1], opacity) if style[0][1]
 
@@ -280,10 +287,10 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 
 									vertices = []
 
-									for k in [k_lst_back[k_index], k_lst_back[k_index + 1]]
+									for k in [k_lst_back[k_index + 1]..k_lst_back[k_index]]
 										do(k) ->
 										
-											for j in [j_lst_back[j_index], j_lst_back[j_index + 1]]
+											for j in [j_lst_back[j_index + 1].. j_lst_back[j_index]]
 												do (j) ->
 
 													vertices.push(
@@ -291,12 +298,25 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 															data[k][j][i][0], 
 															data[k][j][i][1], 
 															data[k][j][i][2])
-														)		
-													
-									face_0 = new THREE.Face3(2, 1, 0)
-									face_1 = new THREE.Face3(3, 1, 2)
+														)
 
-									faces = [face_0, face_1]
+									k_index_size = k_lst_back[k_index] - k_lst_back[k_index + 1]
+									j_index_size = j_lst_back[j_index] - j_lst_back[j_index + 1]
+
+									faces = []
+
+									for k in [0..k_index_size - 1]
+										do (k) ->
+											for j in [0..j_index_size - 1]
+												do (j) ->
+
+													a = (j_index_size + 1) * k + j
+													b = (j_index_size + 1) * (k + 1) + j
+
+													face_0 = new THREE.Face3(b, a + 1, a)
+													face_1 = new THREE.Face3(b + 1, a + 1, b)
+
+													faces.push(face_0, face_1)
 
 									add_surface(vertices, scale_coeff, faces, color[2], opacity) if style[0][2]
 			# ---
@@ -317,10 +337,10 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 
 									vertices = []
 
-									for k in [k_lst_front[k_index - 1], k_lst_front[k_index]]
+									for k in [k_lst_front[k_index - 1].. k_lst_front[k_index]]
 										do(k) ->
 
-											for j in [j_lst_front[j_index - 1], j_lst_front[j_index]]
+											for j in [j_lst_front[j_index - 1]..j_lst_front[j_index]]
 												do (j) ->
 
 													vertices.push(
@@ -328,19 +348,34 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 															data[k][j][i][0], 
 															data[k][j][i][1], 
 															data[k][j][i][2])
-														)		
-													
-									face_0 = new THREE.Face3(0, 1, 2)
-									face_1 = new THREE.Face3(2, 1, 3)
+														)
 
-									faces = [face_0, face_1]
+									k_index_size = k_lst_front[k_index] - k_lst_front[k_index - 1]
+									j_index_size = j_lst_front[j_index] - j_lst_front[j_index - 1]
+
+									faces = []
+
+									for k in [0..k_index_size - 1]
+										do (k) ->
+											for j in [0..j_index_size - 1]
+												do (j) ->
+
+													a = (j_index_size + 1) * k + j
+													b = (j_index_size + 1) * (k + 1) + j
+
+													face_0 = new THREE.Face3(a, a + 1, b)
+													face_1 = new THREE.Face3(b, a + 1, b + 1)
+
+													faces.push(face_0, face_1)
 
 									add_surface(vertices, scale_coeff, faces, color[2], opacity) if style[0][2]
 						# ---
 
+						j = j_lst_front[j_index]
+
 						vertices = []
 
-						for k in [k_lst_back[k_index - 1], k_lst_back[k_index]]
+						for k in [k_lst_back[k_index]..k_lst_back[k_index - 1]]
 							do(k) ->
 						
 								for i in [i_first..i_last]
@@ -353,19 +388,22 @@ root.gen_surfaces = (data, scale_coeff, detail, style, filter, filter_style) ->
 												data[k][j][i][2])
 											)
 
+						k_index_size = k_lst_back[k_index - 1] - k_lst_back[k_index]
+
 						faces = []
 
-						for i in [0..i_size - 1]
-							do (i, k = 0) ->
+						for k in [0..k_index_size - 1]
+							do (k) ->
+								for i in [0..i_size - 1]
+									do (i) ->
 
-								a = (i_size + 1) * k + i
-								b = (i_size + 1) * (k + 1) + i
-												
-												
-								face_0 = new THREE.Face3(a, a + 1, b)
-								face_1 = new THREE.Face3(b, a + 1, b + 1)
+										a = (i_size + 1) * k + i
+										b = (i_size + 1) * (k + 1) + i
 
-								faces.push(face_0, face_1)
+										face_0 = new THREE.Face3(b, a + 1, a)
+										face_1 = new THREE.Face3(b + 1, a + 1, b)
+
+										faces.push(face_0, face_1)
 
 						add_surface(vertices, scale_coeff, faces, color[1], opacity) if style[0][1]
 			# ---
