@@ -62,65 +62,103 @@ Scene
 		property var f_blocks
 		property var f_visible
 		property var f_detail
+		property var f_filter
 
 		property var controls: {}
 		property var d_controls: {}
 		property var s_controls: {}
+		property var fs_controls: {}
 		property var id_controls: []
+
+		property var filter_block: -1
+		property var filter_detail_i: [1, 1, 1]
+		property var filter_detail_j: [1, 1, 1]
+		property var filter_detail_k: [1, 1, 1]
+		property var items_filter: []
 
 		property var style_default: true
 		property var lines_style: []
 		property var faces_style: []
+
+		property var fstyle_default: true
+		property var lines_fstyle: []
+		property var faces_fstyle: []
 
 		property var lstate: 0
 		property var fstate: 0
 
 		onLstateChanged: {
 
-			if (style_default != grid.s_controls["Default Style"])
-				style_default = grid.s_controls["Default Style"];
+			if (style_default != s_controls["Default Style"])
+				style_default = s_controls["Default Style"];
 
-			var lines_style_visible = [
-				grid.s_controls["lines i"], 
-				grid.s_controls["lines j"],
-				grid.s_controls["lines k"]];
-			var lines_style_colors = [
-				grid.s_controls["lines i color"], 
-				grid.s_controls["lines j color"], 
-				grid.s_controls["lines k color"], 
-				grid.s_controls["border color"]];
-			var lines_style_options = [
-				grid.s_controls["lines dashed"], 
-				grid.s_controls["border bold"]];
+			var ls_visible = [
+				s_controls["lines i"], 
+				s_controls["lines j"],
+				s_controls["lines k"]];
+			var ls_colors = [
+				s_controls["lines i color"], 
+				s_controls["lines j color"], 
+				s_controls["lines k color"], 
+				s_controls["border color"]];
+			var ls_options = [
+				s_controls["lines dashed"], 
+				s_controls["border bold"]];
 
-			lines_style = [
-					lines_style_visible,
-					lines_style_colors,
-					lines_style_options
-				];
+			lines_style = [ ls_visible, ls_colors, ls_options ];
+
+			if (fstyle_default != fs_controls["Default Style"])
+				fstyle_default = fs_controls["Default Style"];
+
+			var lfs_visible = [
+				fs_controls["lines i"], 
+				fs_controls["lines j"],
+				fs_controls["lines k"]];
+			var lfs_colors = [
+				fs_controls["lines i color"], 
+				fs_controls["lines j color"], 
+				fs_controls["lines k color"], 
+				fs_controls["border color"]];
+			var lfs_options = [
+				fs_controls["lines dashed"], 
+				fs_controls["border bold"]];
+
+			lines_fstyle = [ lfs_visible, lfs_colors, lfs_options ];
 		}
 
 		onFstateChanged: {
 
-			if (style_default != grid.s_controls["Default Style"])
-				style_default = grid.s_controls["Default Style"];
+			if (style_default != s_controls["Default Style"])
+				style_default = s_controls["Default Style"];
 
-			var faces_style_visible = [
-				grid.s_controls["faces ij"], 
-				grid.s_controls["faces ik"], 
-				grid.s_controls["faces jk"]];
-			var faces_style_colors = [
-				grid.s_controls["faces ij color"], 
-				grid.s_controls["faces ik color"], 
-				grid.s_controls["faces jk color"] ];
-			var faces_style_options = [
-				grid.s_controls["faces opacity"]];
+			var fs_visible = [
+				s_controls["faces ij"], 
+				s_controls["faces ik"], 
+				s_controls["faces jk"]];
+			var fs_colors = [
+				s_controls["faces ij color"], 
+				s_controls["faces ik color"], 
+				s_controls["faces jk color"] ];
+			var fs_options = [
+				s_controls["faces opacity"]];
 
-			faces_style = [
-					faces_style_visible,
-					faces_style_colors,
-					faces_style_options
-				];
+			faces_style = [ fs_visible, fs_colors, fs_options ];
+
+			if (fstyle_default != fs_controls["Default Style"])
+				fstyle_default = fs_controls["Default Style"];
+
+			var ffs_visible = [
+				fs_controls["faces ij"], 
+				fs_controls["faces ik"], 
+				fs_controls["faces jk"]];
+			var ffs_colors = [
+				fs_controls["faces ij color"], 
+				fs_controls["faces ik color"], 
+				fs_controls["faces jk color"] ];
+			var ffs_options = [
+				fs_controls["faces opacity"]];
+
+			faces_fstyle = [ ffs_visible, ffs_colors, ffs_options ];
 		}
 
 		function init_controls()
@@ -172,15 +210,37 @@ Scene
 					}
 					grid.style_default = value;
 				});	
+
+				f_filter = gui.addFolder('Filter');
+
+				fs_controls["lines i"] = true;
+				fs_controls["lines j"] = true;
+				fs_controls["lines k"] = true;
+				fs_controls["lines i color"] = "#000000";
+				fs_controls["lines j color"] = '#000000';
+				fs_controls["lines k color"] = '#000000';
+				fs_controls["lines dashed"] = false;
+				fs_controls["border color"] = '#0000ff';
+				fs_controls["border bold"] = true;
+				
+				fs_controls["faces ij"] = true;
+				fs_controls["faces ik"] = true;
+				fs_controls["faces jk"] = true;
+				fs_controls["faces ij color"] = '#00ff88';
+				fs_controls["faces ik color"] = '#8800ff';
+				fs_controls["faces jk color"] = '#ff8800';
+				fs_controls["faces opacity"] = 0.2;
+
+				fs_controls["Default Style"] = true;
 			}
 		}
 
 		function add_style_controls(f_lines, f_faces, controls)
 		{
-			var change_l = function(value) { 
-				grid.lstate = (grid.lstate + 1) % 2; }
-			var change_f = function(value) { 
-				grid.fstate = (grid.fstate + 1) % 2; }
+			var change_l = 
+				function(value) { grid.lstate = (grid.lstate + 1) % 2; }
+			var change_f = 
+				function(value) { grid.fstate = (grid.fstate + 1) % 2; }
 
 			f_lines.add(controls, "lines i").onFinishChange(change_l); 
 			f_lines.add(controls, "lines j").onFinishChange(change_l); 
@@ -204,10 +264,18 @@ Scene
 
 		function add_style_folders()
 		{
-			var f_lines = grid.f_blocks.addFolder("Lines Style");
-			var f_faces = grid.f_blocks.addFolder("Faces Style");
+			var f_lines = f_blocks.addFolder("Lines Style");
+			var f_faces = f_blocks.addFolder("Faces Style");
 
 			add_style_controls(f_lines, f_faces, s_controls);
+		}
+
+		function add_fstyle_folders()
+		{
+			var f_lines = f_filter.addFolder("Lines Style");
+			var f_faces = f_filter.addFolder("Faces Style");
+
+			add_style_controls(f_lines, f_faces, fs_controls);
 		}
 
 		Item
@@ -233,6 +301,15 @@ Scene
 						var c = grid.id_controls.pop();
 						c[0].remove(c[1]);
 					}
+
+					while(grid.items_filter.length > 0)
+					{
+						var c = grid.items_filter.pop();
+						grid.f_filter.remove(c);
+					}
+
+					grid.f_filter.removeFolder("Lines Style");
+					grid.f_filter.removeFolder("Faces Style");
 				}
 
 				var name = "#" + (block.z + 1).toString() + " visible";
@@ -299,6 +376,160 @@ Scene
 					var c = grid.f_detail.add(grid.controls, "all points");
 
 					grid.id_controls.push([grid.f_detail, c]);
+
+					// filter
+
+					grid.controls["Block"] = "";
+
+					var lst = [""];
+
+					for ( var i = 1; i <= loader.grid.length; i++ ) 
+						lst.push(i.toString());
+
+					var c = grid.f_filter.add(grid.controls, "Block", lst);
+
+					grid.id_controls.push([grid.f_filter, c]);
+
+					c.onFinishChange(function(value)
+					{
+						if (value != "")
+						{
+							grid.filter_block = value - 1;
+
+							while(grid.items_filter.length > 0)
+							{
+								var c = grid.items_filter.pop();
+								grid.f_filter.remove(c);
+							}
+
+							grid.f_filter.removeFolder("Lines Style");
+							grid.f_filter.removeFolder("Faces Style");
+
+							var c, t, l; 
+
+							l = loader.grid[value - 1][0][0].length;
+							t = "i (" + l.toString() + ")";
+							grid.controls[t] = 
+								"from 1 to " + l.toString() + " by 1";
+							c = grid.f_filter.add(grid.controls, t).listen();
+							grid.items_filter.push(c);
+							grid.filter_detail_i = [0, l - 1, 1];
+
+							c.onFinishChange(function(value)
+							{ 
+								var numb = value.match(/\d+/g);
+						
+								if(!!numb && numb.length >= 3) {
+									grid.filter_detail_i = [ 
+										parseInt(numb[0]) - 1, 
+										parseInt(numb[1]) - 1, 
+										parseInt(numb[2]) ];
+								} else {
+									l = loader.grid[
+										grid.filter_block][0][0].length;
+									grid.filter_detail_i = [0, l - 1, 1];
+
+									t = "i (" + l.toString() + ")";
+									grid.controls[t] = 
+										"from 1 to " + l.toString() + " by 1";
+								}
+							});
+
+							l = loader.grid[value - 1][0].length;
+							t = "j (" + l.toString() + ")";
+							grid.controls[t] = 
+								"from 1 to " + l.toString() + " by 1";
+							c = grid.f_filter.add(grid.controls, t).listen();
+							grid.items_filter.push(c);
+							grid.filter_detail_j = [0, l - 1, 1];
+
+							c.onFinishChange(function(value)
+							{ 
+								var numb = value.match(/\d+/g);
+						
+								if(!!numb && numb.length >= 3) {
+									grid.filter_detail_j = [ 
+										parseInt(numb[0]) - 1, 
+										parseInt(numb[1]) - 1, 
+										parseInt(numb[2]) ];
+								} else {
+									l = loader.grid[
+										grid.filter_block][0].length;
+									grid.filter_detail_j = [0, l - 1, 1];
+
+									t = "j (" + l.toString() + ")";
+									grid.controls[t] = 
+										"from 1 to " + l.toString() + " by 1";
+								}
+							});
+
+							l = loader.grid[value - 1].length;
+							t = "k (" + l.toString() + ")";
+							grid.controls[t] = "from " + (l - 1).toString() + 
+								" to " + l.toString() + " by 1";
+							c = grid.f_filter.add(grid.controls, t).listen();
+							grid.items_filter.push(c);
+							grid.filter_detail_k = [l - 2, l - 1, 1];
+
+							c.onFinishChange(function(value)
+							{ 
+								var numb = value.match(/\d+/g);
+						
+								if(!!numb && numb.length >= 3) {
+									grid.filter_detail_k = [ 
+										parseInt(numb[0]) - 1, 
+										parseInt(numb[1]) - 1, 
+										parseInt(numb[2]) ];
+								} else {
+									l = loader.grid[grid.filter_block].length;
+									grid.filter_detail_k = [l - 2, l - 1, 1];
+
+									t = "k (" + l.toString() + ")";
+									grid.controls[t] = "from " + 
+										(l - 1).toString() + " to " + 
+										l.toString() + " by 1";
+								}
+							});
+
+							c = grid.f_filter.add(grid.fs_controls, 
+								"Default Style");
+
+							if ( !grid.fstyle_default )
+								grid.add_fstyle_folders();
+
+							c.onFinishChange(function(value)
+							{ 
+								if ( value ) 
+								{
+									grid.f_filter.removeFolder("Lines Style");
+									grid.f_filter.removeFolder("Faces Style");
+								}
+								else
+								{
+									grid.add_fstyle_folders();
+									grid.lstate = (grid.lstate + 1) % 2;
+									grid.fstate = (grid.fstate + 1) % 2;
+								}
+
+								grid.fstyle_default = value;
+							});
+
+							grid.items_filter.push(c);
+						} 
+						else
+						{
+							grid.filter_block = -1;
+
+							while(grid.items_filter.length > 0)
+							{
+								var c = grid.items_filter.pop();
+								grid.f_filter.remove(c);
+							}
+
+							grid.f_filter.removeFolder("Lines Style");
+							grid.f_filter.removeFolder("Faces Style");
+						} 
+					});
 				}
 			}
 
@@ -312,6 +543,13 @@ Scene
 				detail: block.option_detail
 				
 				style: grid.style_default ? [] : grid.lines_style
+
+				filter: block.z != grid.filter_block ? []: [
+					grid.filter_detail_k,
+					grid.filter_detail_j, 
+					grid.filter_detail_i ]
+				
+				fstyle: grid.fstyle_default ? [] : grid.lines_fstyle
 				
 				Component.onCompleted: makeLater(this);
 			}
@@ -326,6 +564,13 @@ Scene
 				detail: block.option_detail
 
 				style: grid.style_default ? [] : grid.faces_style
+
+				filter: block.z != grid.filter_block ? []: [
+					grid.filter_detail_k,
+					grid.filter_detail_j, 
+					grid.filter_detail_i ]
+				
+				fstyle: grid.fstyle_default ? [] : grid.faces_fstyle
 				
 				Component.onCompleted: makeLater(this);
 			}
