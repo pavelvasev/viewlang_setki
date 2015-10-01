@@ -6,9 +6,22 @@ SceneObject
 	property var scale_coeff: 1
 
 	property var detail: [1, 1, 1]
+	// [k step, j step, i step]
+	
 	property var style: []
+	// [ [visible ij, visible ik, visible jk],
+	//   [color ij, color ik, color jk],
+	//   [opacity] ]
+	
 	property var filter: []
+	// [ [k first, k last, k step], 
+	//   [j first, j last, j step], 
+	//   [i first, i last, i step] ]
+	
 	property var fstyle: []
+	// [ [visible ij, visible ik, visible jk],
+	//   [color ij, color ik, color jk],
+	//   [opacity] ]
 
 	function make3d() {
 
