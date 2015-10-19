@@ -7,6 +7,8 @@ Scene
 	
 	property var script_gui_flag: false
 	property var script_grid_flag: false
+	property var script_lib_flag_1: false
+	property var script_lib_flag_2: false
 
 	property var q: script_init()
 
@@ -29,6 +31,18 @@ Scene
 
 					script_gui_flag = true; 
 				});
+
+		if( !script_lib_flag_1 )
+			la_require(
+				$basePath + 
+				"lib/three.js/examples/js/renderers/Projector.js",
+				function() { script_lib_flag_1 = true; });
+
+		if( !script_lib_flag_2 )
+			la_require(
+				$basePath + 
+				"lib/three.js/examples/js/renderers/SVGRenderer.js",
+				function() { script_lib_flag_2 = true; });
 
 		if ( !script_grid_flag )
 			la_require( 
@@ -77,98 +91,114 @@ Scene
 		property var items_filter: []
 
 		property var style_default: true
-		property var lines_style: []
-		property var faces_style: []
+		property var style_filter_default: true
 
-		property var fstyle_default: true
-		property var lines_fstyle: []
-		property var faces_fstyle: []
+		property var l_directions: [true, true, true, true]
+		property var l_colors: 
+			["#ffffff", "#ffffff", "#ffffff", "#000000"]
+		property var l_options: [false, true]
 
-		property var lstate: 0
-		property var fstate: 0
+		property var l_filter_directions: [true, true, true, true]
+		property var l_filter_colors: 
+			["#000000", "#000000", "#000000", "#0000ff"]
+		property var l_filter_options: [false, true]
 
-		onLstateChanged: {
+		property var f_directions: [false, false, false]
+		property var f_colors: ["#00ffff", "#ff00ff", "#ffff00"]
+		property var f_options: [0.2]
 
-			if (style_default != s_controls["Default Style"])
-				style_default = s_controls["Default Style"];
+		property var f_filter_directions: [true, true, true]
+		property var f_filter_colors: ["#00ff88", "#8800ff", "#ff8800"]
+		property var f_filter_options: [0.2]
 
-			var ls_visible = [
-				s_controls["lines i"], 
-				s_controls["lines j"],
-				s_controls["lines k"]];
-			var ls_colors = [
+		property var state_l_materials: 0
+		property var state_l_directions: 0
+
+		property var state_f_materials: 0
+		property var state_f_directions: 0
+
+		onState_l_materialsChanged: {		
+
+			l_colors = [
 				s_controls["lines i color"], 
 				s_controls["lines j color"], 
 				s_controls["lines k color"], 
 				s_controls["border color"]];
-			var ls_options = [
+			l_options = [
 				s_controls["lines dashed"], 
 				s_controls["border bold"]];
-
-			lines_style = [ ls_visible, ls_colors, ls_options ];
-
-			if (fstyle_default != fs_controls["Default Style"])
-				fstyle_default = fs_controls["Default Style"];
-
-			var lfs_visible = [
-				fs_controls["lines i"], 
-				fs_controls["lines j"],
-				fs_controls["lines k"]];
-			var lfs_colors = [
+			
+			l_filter_colors = [
 				fs_controls["lines i color"], 
 				fs_controls["lines j color"], 
 				fs_controls["lines k color"], 
-				fs_controls["border color"]];
-			var lfs_options = [
+				fs_controls["border color"]]
+			l_filter_options = [
 				fs_controls["lines dashed"], 
 				fs_controls["border bold"]];
-
-			lines_fstyle = [ lfs_visible, lfs_colors, lfs_options ];
 		}
 
-		onFstateChanged: {
+		onState_l_directionsChanged: {
 
 			if (style_default != s_controls["Default Style"])
 				style_default = s_controls["Default Style"];
+			if (style_filter_default != fs_controls["Default Style"])
+				style_filter_default = fs_controls["Default Style"];
+			
+			l_directions = [
+				s_controls["lines i"], 
+				s_controls["lines j"],
+				s_controls["lines k"],
+				s_controls["internal"]];
 
-			var fs_visible = [
-				s_controls["faces ij"], 
-				s_controls["faces ik"], 
-				s_controls["faces jk"]];
-			var fs_colors = [
+			l_filter_directions = [
+				fs_controls["lines i"], 
+				fs_controls["lines j"],
+				fs_controls["lines k"],
+				fs_controls["internal"]];
+		}
+
+		onState_f_materialsChanged: {
+			
+			if (style_default != s_controls["Default Style"])
+				style_default = s_controls["Default Style"];
+			if (style_filter_default != fs_controls["Default Style"])
+				style_filter_default = fs_controls["Default Style"];		
+
+			f_colors = [
 				s_controls["faces ij color"], 
 				s_controls["faces ik color"], 
 				s_controls["faces jk color"] ];
-			var fs_options = [
+			f_options = [
 				s_controls["faces opacity"]];
 
-			faces_style = [ fs_visible, fs_colors, fs_options ];
-
-			if (fstyle_default != fs_controls["Default Style"])
-				fstyle_default = fs_controls["Default Style"];
-
-			var ffs_visible = [
-				fs_controls["faces ij"], 
-				fs_controls["faces ik"], 
-				fs_controls["faces jk"]];
-			var ffs_colors = [
+			f_filter_colors = [
 				fs_controls["faces ij color"], 
 				fs_controls["faces ik color"], 
 				fs_controls["faces jk color"] ];
-			var ffs_options = [
+			f_filter_options = [
 				fs_controls["faces opacity"]];
+		}
 
-			faces_fstyle = [ ffs_visible, ffs_colors, ffs_options ];
+		onState_f_directionsChanged: {
+			f_directions = [
+				s_controls["faces ij"], 
+				s_controls["faces ik"], 
+				s_controls["faces jk"]];
+
+			f_filter_directions = [
+				fs_controls["faces ij"], 
+				fs_controls["faces ik"], 
+				fs_controls["faces jk"]];
 		}
 
 		function init_controls()
 		{
-			if ( script_gui_flag )
+			if ( script_gui_flag && script_lib_flag_1 && script_lib_flag_2 )
 			{
 				gui = new dat.GUI( { width: 350 } );
 
 				f_blocks = gui.addFolder('Blocks');
-				f_blocks.open();
 
 				f_visible = f_blocks.addFolder("Visible");
 				f_detail = f_blocks.addFolder("Detail");
@@ -182,6 +212,7 @@ Scene
 				s_controls["lines dashed"] = false;
 				s_controls["border color"] = '#000000';
 				s_controls["border bold"] = true;
+				s_controls["internal"] = true;
 				
 				s_controls["faces ij"] = false;
 				s_controls["faces ik"] = false;
@@ -205,8 +236,16 @@ Scene
 					else 
 					{
 						grid.add_style_folders();
-						grid.lstate = (grid.lstate + 1) % 2;
-						grid.fstate = (grid.fstate + 1) % 2;
+						
+						grid.state_l_directions = 
+							(grid.state_l_directions != 0)? 0: 1;
+						grid.state_f_directions = 
+							(grid.state_f_directions != 0)? 0: 1;
+
+						/*grid.state_l_materials = 
+							(grid.state_l_materials != 0)? 0: 1;
+						grid.state_f_directions = 
+							(grid.state_f_directions != 0)? 0: 1;*/
 					}
 					grid.style_default = value;
 				});	
@@ -222,6 +261,7 @@ Scene
 				fs_controls["lines dashed"] = false;
 				fs_controls["border color"] = '#0000ff';
 				fs_controls["border bold"] = true;
+				fs_controls["internal"] = true;
 				
 				fs_controls["faces ij"] = true;
 				fs_controls["faces ik"] = true;
@@ -232,34 +272,72 @@ Scene
 				fs_controls["faces opacity"] = 0.2;
 
 				fs_controls["Default Style"] = true;
+
+				var f_export = gui.addFolder('Export');
+
+				renderer_SVG = new THREE.SVGRenderer();
+				renderer_SVG.setSize( 
+					window.innerWidth, window.innerHeight);
+
+				grid.controls["*.png"] = function() {
+						window.open(
+							$("body").children("canvas")[0].toDataURL());
+					};
+
+				grid.controls["*.svg [slow]"] = function() {
+						renderer_SVG.render(scene, camera);
+						document.body.appendChild( renderer_SVG.domElement );
+
+						var svg = $("body").children("svg")[0];
+						var serializer = new XMLSerializer();
+						var svg_blob = new Blob([serializer.serializeToString(svg)], {'type': "image/svg+xml"});
+						var url = URL.createObjectURL(svg_blob);
+
+						window.open(url);
+
+						document.body.removeChild( renderer_SVG.domElement );
+					};
+
+				f_export.add(grid.controls, "*.png");
+				f_export.add(grid.controls, "*.svg [slow]");
 			}
 		}
 
 		function add_style_controls(f_lines, f_faces, controls)
 		{
-			var change_l = 
-				function(value) { grid.lstate = (grid.lstate + 1) % 2; }
-			var change_f = 
-				function(value) { grid.fstate = (grid.fstate + 1) % 2; }
+			var change_l_m = function(value) { 
+				grid.state_l_materials =
+					(grid.state_l_materials != 0)? 0: 1; }
+			var change_l_d = function(value) {
+				grid.state_l_directions = 
+					(grid.state_l_directions != 0)? 0: 1; }
 
-			f_lines.add(controls, "lines i").onFinishChange(change_l); 
-			f_lines.add(controls, "lines j").onFinishChange(change_l); 
-			f_lines.add(controls, "lines k").onFinishChange(change_l); 
-			f_lines.addColor(controls, "lines i color").onChange(change_l); 
-			f_lines.addColor(controls, "lines j color").onChange(change_l); 
-			f_lines.addColor(controls, "lines k color").onChange(change_l); 
-			f_lines.add(controls, "lines dashed").onFinishChange(change_l); 
-			f_lines.addColor(controls, "border color").onChange(change_l); 
-			f_lines.add(controls, "border bold").onFinishChange(change_l); 
+			var change_f_m = function(value) { 
+				grid.state_f_materials =
+					(grid.state_f_materials != 0)? 0: 1; }
+			var change_f_d = function(value) {
+				grid.state_f_directions = 
+					(grid.state_f_directions != 0)? 0: 1; }
+
+			f_lines.add(controls, "lines i").onFinishChange(change_l_d); 
+			f_lines.add(controls, "lines j").onFinishChange(change_l_d); 
+			f_lines.add(controls, "lines k").onFinishChange(change_l_d); 
+			f_lines.addColor(controls, "lines i color").onChange(change_l_m); 
+			f_lines.addColor(controls, "lines j color").onChange(change_l_m); 
+			f_lines.addColor(controls, "lines k color").onChange(change_l_m);
+			f_lines.add(controls, "internal").onFinishChange(change_l_d);
+			f_lines.add(controls, "lines dashed").onFinishChange(change_l_m); 
+			f_lines.addColor(controls, "border color").onChange(change_l_m); 
+			f_lines.add(controls, "border bold").onFinishChange(change_l_m); 
 							
-			f_faces.add(controls, "faces ij").onFinishChange(change_f);
-			f_faces.add(controls, "faces ik").onFinishChange(change_f);
-			f_faces.add(controls, "faces jk").onFinishChange(change_f);
-			f_faces.addColor(controls, "faces ij color").onChange(change_f);
-			f_faces.addColor(controls, "faces ik color").onChange(change_f);
-			f_faces.addColor(controls, "faces jk color").onChange(change_f);
+			f_faces.add(controls, "faces ij").onFinishChange(change_f_d);
+			f_faces.add(controls, "faces ik").onFinishChange(change_f_d);
+			f_faces.add(controls, "faces jk").onFinishChange(change_f_d);
+			f_faces.addColor(controls, "faces ij color").onChange(change_f_m);
+			f_faces.addColor(controls, "faces ik color").onChange(change_f_m);
+			f_faces.addColor(controls, "faces jk color").onChange(change_f_m);
 			f_faces.add(controls, "faces opacity", 0, 1).step(0.05)
-				.onFinishChange(change_f);
+				.onFinishChange(change_f_m);
 		}
 
 		function add_style_folders()
@@ -287,9 +365,9 @@ Scene
 
 			property var option_visible: true
 			property var option_detail: [
-					Math.floor(loader.grid[ index ].length / 25) * 2 + 1,
-					Math.floor(loader.grid[ index ][0].length / 25) * 2 + 1,
-					Math.floor(loader.grid[ index ][0][0].length / 25) * 2 + 1
+					Math.floor(loader.grid[ index ].length / 25) + 1,
+					Math.floor(loader.grid[ index ][0].length / 25) + 1,
+					Math.floor(loader.grid[ index ][0][0].length / 25) + 1
 				]
 			
 			function add_controls()
@@ -335,7 +413,7 @@ Scene
 					d[0].toString() + ")";
 
 				for (var i = 0; i < 3; i++) 
-					d[i] = Math.floor(d[i] / 25) * 2 + 1;
+					d[i] = Math.floor(d[i] / 25) + 1;
 
 				grid.d_controls[ name ] = "di = " +
 					d[2].toString() + ", dj = " + 
@@ -419,11 +497,13 @@ Scene
 							{ 
 								var numb = value.match(/\d+/g);
 						
-								if(!!numb && numb.length >= 3) {
-									grid.filter_detail_i = [ 
-										parseInt(numb[0]) - 1, 
-										parseInt(numb[1]) - 1, 
-										parseInt(numb[2]) ];
+								if(!!numb) {
+									var tmp = [1, 1, 1];
+									if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
+									if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
+										else tmp[1] = tmp[0] + 1;
+									if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
+									grid.filter_detail_i = [tmp[0], tmp[1], tmp[2]];
 								} else {
 									l = loader.grid[
 										grid.filter_block][0][0].length;
@@ -447,11 +527,13 @@ Scene
 							{ 
 								var numb = value.match(/\d+/g);
 						
-								if(!!numb && numb.length >= 3) {
-									grid.filter_detail_j = [ 
-										parseInt(numb[0]) - 1, 
-										parseInt(numb[1]) - 1, 
-										parseInt(numb[2]) ];
+								if(!!numb) {
+									var tmp = [1, 1, 1];
+									if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
+									if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
+										else tmp[1] = tmp[0] + 1;
+									if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
+									grid.filter_detail_j = [tmp[0], tmp[1], tmp[2]];
 								} else {
 									l = loader.grid[
 										grid.filter_block][0].length;
@@ -475,18 +557,19 @@ Scene
 							{ 
 								var numb = value.match(/\d+/g);
 						
-								if(!!numb && numb.length >= 3) {
-									grid.filter_detail_k = [ 
-										parseInt(numb[0]) - 1, 
-										parseInt(numb[1]) - 1, 
-										parseInt(numb[2]) ];
+								if(!!numb) {
+									var tmp = [1, 1, 1];
+									if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
+									if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
+										else tmp[1] = tmp[0] + 1;
+									if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
+									grid.filter_detail_k = [tmp[0], tmp[1], tmp[2]];
 								} else {
 									l = loader.grid[grid.filter_block].length;
-									grid.filter_detail_k = [l - 2, l - 1, 1];
+									grid.filter_detail_k = [0, l - 1, 1];
 
 									t = "k (" + l.toString() + ")";
-									grid.controls[t] = "from " + 
-										(l - 1).toString() + " to " + 
+									grid.controls[t] = "from 1 to " + 
 										l.toString() + " by 1";
 								}
 							});
@@ -494,7 +577,7 @@ Scene
 							c = grid.f_filter.add(grid.fs_controls, 
 								"Default Style");
 
-							if ( !grid.fstyle_default )
+							if ( !grid.style_filter_default )
 								grid.add_fstyle_folders();
 
 							c.onFinishChange(function(value)
@@ -507,11 +590,13 @@ Scene
 								else
 								{
 									grid.add_fstyle_folders();
-									grid.lstate = (grid.lstate + 1) % 2;
-									grid.fstate = (grid.fstate + 1) % 2;
+									grid.state_l_directions = 
+										(grid.state_l_directions != 0)? 0: 1;
+									grid.state_f_directions = 
+										(grid.state_f_directions != 0)? 0: 1;
 								}
 
-								grid.fstyle_default = value;
+								grid.style_filter_default = value;
 							});
 
 							grid.items_filter.push(c);
@@ -541,17 +626,22 @@ Scene
 				scale_coeff: loader.scale_coeff
 
 				detail: block.option_detail
-				
-				style: grid.style_default ? [] : grid.lines_style
 
-				filter: block.z != grid.filter_block ? []: [
-					grid.filter_detail_k,
-					grid.filter_detail_j, 
-					grid.filter_detail_i ]
-				
-				fstyle: grid.fstyle_default ? [] : grid.lines_fstyle
-				
-				Component.onCompleted: makeLater(this);
+				filter: block.z != grid.filter_block ? []: 
+					[ grid.filter_detail_k,
+					  grid.filter_detail_j, 
+					  grid.filter_detail_i ]
+
+				directions: grid.style_default ? [] : grid.l_directions
+				colors: grid.style_default ? [] : grid.l_colors
+				options: grid.style_default ? [] : grid.l_options
+
+				filter_directions: grid.style_filter_default ? [] : 
+					grid.l_filter_directions
+				filter_colors: grid.style_filter_default ? [] : 
+					grid.l_filter_colors
+				filter_options: grid.style_filter_default ? [] : 
+					grid.l_filter_options
 			}
 
 			GridFaces
@@ -563,19 +653,20 @@ Scene
 
 				detail: block.option_detail
 
-				style: grid.style_default ? [] : grid.faces_style
+				filter: block.z != grid.filter_block ? []: 
+					[ grid.filter_detail_k,
+					  grid.filter_detail_j, 
+					  grid.filter_detail_i ]
 
-				filter: block.z != grid.filter_block ? []: [
-					grid.filter_detail_k,
-					grid.filter_detail_j, 
-					grid.filter_detail_i ]
-				
-				fstyle: grid.fstyle_default ? [] : grid.faces_fstyle
-				
-				Component.onCompleted: makeLater(this);
+				directions: grid.style_default ? [] : grid.f_directions
+				colors: grid.f_colors
+				options:  grid.f_options
+
+				filter_directions: grid.style_filter_default ? [] : 
+					grid.f_filter_directions
+				filter_colors: grid.f_filter_colors
+				filter_options: grid.f_filter_options
 			}
-
-			Component.onCompleted: makeLater(this);
 		}
 	}
 }
