@@ -4,6 +4,8 @@ Item
 	property var file
 	property var grid: []
 	property var scale_coeff: 1
+	property var min: []
+	property var max: []
 
 	property var q: load()
 
@@ -98,6 +100,8 @@ Item
 
 				scale_coeff = calc_scale_coeff(Min, Max);
 				grid = result;
+				min = Min;
+				max = Max;
 			}
 
 		});

@@ -146,16 +146,53 @@ root.gen_lines = (data, scale_coeff, lst,
 						if m.length > 1 
 							add_line(pnts, scale_coeff, m[0], m[1])
 
-root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
+root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 	filter=[], filter_directions=[], filter_materials=[]) ->
+	
+	if filter.length < 3 and filter_directions.length < 3
+		filter_directions = [false, false, false]
 
 	k_first = 0
 	j_first = 0
 	i_first = 0
 
-	k_last = data.length - 1
-	j_last = data[0].length - 1
-	i_last = data[0][0].length - 1
+	if filter.length < 3 and (!dir[0] and !dir[1] and dir[2])
+		vec = (k, j, i) -> 
+			new THREE.Vector3(data[j][i][k][0], data[j][i][k][1], data[j][i][k][2])
+
+		detail = [det[1], det[2], det[0]]
+		directions = [dir[2], dir[0], dir[1]]
+		materials = [mat[2], mat[0], mat[1]] 
+
+		k_last = data[0][0].length - 1
+		j_last = data.length - 1
+		i_last = data[0].length - 1	
+
+	else if filter.length < 3 and 
+	((!dir[0] and dir[1] and !dir[2]) or (!dir[0] and dir[1] and dir[2]))
+		vec = (k, j, i) -> 
+			new THREE.Vector3(data[i][k][j][0], data[i][k][j][1], data[i][k][j][2])
+
+		detail = [det[2], det[0], det[1]]
+		directions = [dir[1], dir[2], dir[0]] 
+		materials = [mat[1], mat[2], mat[0]] 
+
+		k_last = data[0].length - 1
+		j_last = data[0][0].length - 1
+		i_last = data.length - 1
+
+	else
+		vec = (k, j, i) -> 
+			new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2])
+
+		detail = [det[0], det[1], det[2]]
+		directions = [dir[0], dir[1], dir[2]]
+		materials = [mat[0], mat[1], mat[2]] 
+
+		k_last = data.length - 1
+		j_last = data[0].length - 1
+		i_last = data[0][0].length - 1
+	
 
 	get_segment = (l, r, step) ->
 		lst = []
@@ -251,10 +288,6 @@ root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
 	j_size = 1 if j_size < 1
 	i_size = 1 if i_size < 1
 
-	vec = (k, j, i) -> 
-		new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2])
-
-
 	internal_area = (dir, k, j, i) ->
 		f1 = f2 = f3 = true
 		
@@ -264,6 +297,32 @@ root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
 			f2 = if j >= filter[1][0] and j < filter[1][1] then true else false
 		if dir != 2
 			f3 = if i >= filter[2][0] and i < filter[2][1] then true else false
+
+
+		#if dir == 0
+		#	if !filter_directions[0] and filter[0][0] != filter[0][1]
+		#		f1 = if k > filter[0][0] and k < filter[0][1] then true else false
+		#	else
+		#		f1 = if k >= filter[0][0] and k <= filter[0][1] then true else false
+		#else
+		#	f1 = if k >= filter[0][0] and k <= filter[0][1] then true else false
+
+		#if dir == 1
+		#	if !filter_directions[1] and filter[1][0] != filter[1][1]
+		#		f2 = if j > filter[1][0] and j < filter[1][1] then true else false
+		#	else
+		#		f2 = if j >= filter[1][0] and j <= filter[1][1] then true else false
+		#else
+		#	f2 = if j >= filter[1][0] and j <= filter[1][1] then true else false
+
+		#if dir == 2
+		#	if !filter_directions[2] and filter[2][0] != filter[2][1]
+		#		f3 = if i > filter[2][0] and i < filter[2][1] then true else false
+		#	else
+		#		f3 = if i >= filter[2][0] and i <= filter[2][1] then true else false
+		#else
+		#	f3 = if i >= filter[2][0] and i <= filter[2][1] then true else false
+			
 
 		f1 && f2 && f3
 
@@ -278,52 +337,53 @@ root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
 			get_face_1 = (a, b) -> new THREE.Face3(b, a + 1, b  + 1)
 			i = i_lst_front[i_index]
 
-		vertices = []
-		for k in [k1..k2]
-			do(k) ->
-				for j in [j1..j2]
-					do (j) ->
-						vertices.push(vec(k, j, i))
-
 		k_index_size = k2 - k1
 		j_index_size = j2 - j1
 
-		faces = []
-		faces_internal = []
+		if k1 != k2 and j1 != j2
+			vertices = []
+			for k in [k1..k2]
+				do(k) ->
+					for j in [j1..j2]
+						do (j) ->
+							vertices.push(vec(k, j, i))
 
-		for k in [0..k_index_size - 1]
-			do (k) ->
-				for j in [0..j_index_size - 1]
-					do (j) ->
-						
-						a = (j_index_size + 1) * k + j
-						b = (j_index_size + 1) * (k + 1) + j
+			faces = []
+			faces_internal = []
 
-						face_0 = get_face_0(a, b)
-						face_1 = get_face_1(a, b)
-
-						if filter_internal and
-						i >= filter[2][0] and i <= filter[2][1]
+			for k in [0..k_index_size - 1]
+				do (k) ->
+					for j in [0..j_index_size - 1]
+						do (j) ->
 							
-							k0 = k + k1
-							j0 = j + j1
-											
-							if internal_area(1, k0, j0, i)
-								if i in i_lst_filter
-									faces_internal.push(face_0, face_1)
-							else if i in i_lst_main
+							a = (j_index_size + 1) * k + j
+							b = (j_index_size + 1) * (k + 1) + j
+
+							face_0 = get_face_0(a, b)
+							face_1 = get_face_1(a, b)
+
+							if filter_internal and
+							i >= filter[2][0] and i <= filter[2][1]
+								
+								k0 = k + k1
+								j0 = j + j1
+												
+								if internal_area(2, k0, j0, i)
+									if i in i_lst_filter
+										faces_internal.push(face_0, face_1)
+								else if i in i_lst_main
+									faces.push(face_0, face_1)
+							else
 								faces.push(face_0, face_1)
-						else
-							faces.push(face_0, face_1)
 
-		if faces.length > 0 and directions[2]
-			add_surface(vertices, scale_coeff, 
-				faces, materials[2], 2)
+			if faces.length > 0 and directions[2]
+				add_surface(vertices, scale_coeff, 
+					faces, materials[2], 2)
 
-		if filter_internal and faces_internal.length > 0 and 
-		filter_directions[2]
-			add_surface(vertices, scale_coeff, 
-				faces_internal, filter_materials[2], 5)
+			if filter_internal and faces_internal.length > 0 and 
+			filter_directions[2]
+				add_surface(vertices, scale_coeff, 
+					faces_internal, filter_materials[2], 5)
 
 	j_part = (dir, j_index, k1, k2) ->
 
@@ -332,7 +392,7 @@ root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
 				j1 = j_lst_front[j_index - 1]
 				j2 = j_lst_front[j_index]
 
-				if j_index > j_lst_front.length / 2
+				if j_index >= j_lst_front.length / 2
 
 					for i, i_index in i_lst_front
 						do (i) ->
@@ -362,57 +422,58 @@ root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
 			get_face_0 = (a, b) -> new THREE.Face3(b, a + 1, a)
 			get_face_1 = (a, b) -> new THREE.Face3(b + 1, a + 1, b)
 
-		vertices = []
-		for k in [k1..k2]
-			do(k) ->
-				for i in [i_first..i_last]
-					do (i) ->
-						vertices.push(vec(k, j, i))
-
 		k_index_size = k2 - k1
 
-		faces = []
-		faces_internal = []
+		if k1 != k2 and i_first != i_last
+			vertices = []
+			for k in [k1..k2]
+				do(k) ->
+					for i in [i_first..i_last]
+						do (i) ->
+							vertices.push(vec(k, j, i))			
 
-		for k in [0..k_index_size - 1]
-			do (k) ->
-				for i in [0..i_size - 1]
-					do (i) ->
+			faces = []
+			faces_internal = []
 
-						a = (i_size + 1) * k + i
-						b = (i_size + 1) * (k + 1) + i
+			for k in [0..k_index_size - 1]
+				do (k) ->
+					for i in [0..i_size - 1]
+						do (i) ->
 
-						face_0 = get_face_0(a, b)
-						face_1 = get_face_1(a, b)
+							a = (i_size + 1) * k + i
+							b = (i_size + 1) * (k + 1) + i
 
-						if filter_internal and
-						j >= filter[1][0] and j <= filter[1][1]
-							
-							k0 = k + k1
-											
-							if internal_area(1, k0, j, i)
-								if j in j_lst_filter
-									faces_internal.push(face_0, face_1)
-							else if j in j_lst_main
+							face_0 = get_face_0(a, b)
+							face_1 = get_face_1(a, b)
+
+							if filter_internal and
+							j >= filter[1][0] and j <= filter[1][1]
+								
+								k0 = k + k1
+												
+								if internal_area(1, k0, j, i)
+									if j in j_lst_filter
+										faces_internal.push(face_0, face_1)
+								else if j in j_lst_main
+									faces.push(face_0, face_1)
+							else
 								faces.push(face_0, face_1)
-						else
-							faces.push(face_0, face_1)
 
-		if faces.length > 0 and directions[1]
-			add_surface(vertices, scale_coeff, 
-				faces, materials[1], 1)
+			if faces.length > 0 and directions[1]
+				add_surface(vertices, scale_coeff, 
+					faces, materials[1], 1)
 
-		if filter_internal and faces_internal.length > 0 and 
-		filter_directions[1]
-			add_surface(vertices, scale_coeff, 
-				faces_internal, filter_materials[1], 4)
+			if filter_internal and faces_internal.length > 0 and 
+			filter_directions[1]
+				add_surface(vertices, scale_coeff, 
+					faces_internal, filter_materials[1], 4)
 
 		if dir != 1
 			if j_index > 0
 				j1 = j_lst_front[j_index - 1]
 				j2 = j_lst_front[j_index]
 
-				if j_index > j_lst_front.length / 2
+				if j_index >= j_lst_front.length / 2
 
 					for i, i_index in i_lst_front
 						do (i) ->
@@ -454,49 +515,50 @@ root.gen_surfaces = (data, scale_coeff, detail, directions, materials,
 			get_face_0 = (a, b) -> new THREE.Face3(a, a + 1, b)
 			get_face_1 = (a, b) -> new THREE.Face3(b, a + 1, b + 1)
 
-		vertices = []
-		for j in [j_first..j_last]
-			do(j) ->
-				for i in [i_first..i_last]
-					do (i) ->
-						vertices.push(vec(k, j, i))
+		if j_first != j_last and i_first != i_last
+			vertices = []
+			for j in [j_first..j_last]
+				do(j) ->
+					for i in [i_first..i_last]
+						do (i) ->
+							vertices.push(vec(k, j, i))
 
-		faces = []
-		faces_internal = []
+			faces = []
+			faces_internal = []
 
-		for j in [0..j_size - 1]
-			do(j) ->
-				for i in [0..i_size - 1]
-					do (i) ->
+			for j in [0..j_size - 1]
+				do(j) ->
+					for i in [0..i_size - 1]
+						do (i) ->
 
-						a = (i_size + 1) * j + i
-						b = (i_size + 1) * (j + 1) + i
-								
-						face_0 = get_face_0(a, b)
-						face_1 = get_face_1(a, b)
+							a = (i_size + 1) * j + i
+							b = (i_size + 1) * (j + 1) + i
+									
+							face_0 = get_face_0(a, b)
+							face_1 = get_face_1(a, b)
 
-						if filter_internal and
-						k >= filter[0][0] and k <= filter[0][1]
-							if internal_area(0, k, j, i)
-								if k in k_lst_filter
-									faces_internal.push(face_0, face_1)
-							else if k in k_lst_main
+							if filter_internal and
+							k >= filter[0][0] and k <= filter[0][1]
+								if internal_area(0, k, j, i)
+									if k in k_lst_filter
+										faces_internal.push(face_0, face_1)
+								else if k in k_lst_main
+									faces.push(face_0, face_1)
+							else
 								faces.push(face_0, face_1)
-						else
-							faces.push(face_0, face_1)
 
-		if faces.length > 0 and directions[0]
-			add_surface(vertices, scale_coeff, faces, materials[0], 0)
+			if faces.length > 0 and directions[0]
+				add_surface(vertices, scale_coeff, faces, materials[0], 0)
 
-		if filter_internal and faces_internal.length > 0 and 
-		filter_directions[0]
-			add_surface(vertices, scale_coeff, faces_internal, 
-				filter_materials[0], 3)
+			if filter_internal and faces_internal.length > 0 and 
+			filter_directions[0]
+				add_surface(vertices, scale_coeff, faces_internal, 
+					filter_materials[0], 3)
 
 		if dir != 1 and k_index > 0
 			k1 = k_lst_front[k_index - 1]
 			k2 = k_lst_front[k_index]
-			
+
 			if k_index < k_lst_front.length / 2
 
 				for j, j_index in j_lst_front
@@ -695,3 +757,72 @@ root.GridFaces =
 						filter_directions, filter_materials, filter)
 
 		root.faces
+
+root.GridPoints = 
+	init: (data, scale_coeff, variable, min, max, index, color, radius) ->
+
+		geometry = new THREE.BufferGeometry()
+
+		paletter = []
+
+		for i in [0..color.length - 1]
+			do (i) ->
+				paletter.push(parseInt(color[i].substring(1), 16))
+
+		variable = parseInt(variable) + 2
+		
+		v0 = min[variable]
+		v1 = max[variable]
+
+		positions = []
+		colors = []
+
+		for k in data
+			do (k) ->
+				for j in k
+					do (j) ->
+						for i in j
+							do (i) ->
+								positions.push(i[0], i[1], i[2])
+								
+								value = i[variable]
+
+								coeff = (value - v0) / (v1 - v0)
+
+								coeff_int = Math.floor(coeff * (paletter.length - 1))
+								
+								r0 = paletter[coeff_int] >> 16
+								g0 = (paletter[coeff_int] & 0x00ff00) >> 8
+								b0 = paletter[coeff_int] & 0x0000ff
+
+								if coeff_int == paletter.length - 1
+									r = r0
+									g = g0
+									b = b0
+								else
+									r1 = paletter[coeff_int + 1] >> 16
+									g1 = (paletter[coeff_int + 1] & 0x00ff00) >> 8
+									b1 = paletter[coeff_int + 1] & 0x0000ff
+
+									coeff_0 = coeff * (paletter.length - 1) - coeff_int
+
+									r = Math.abs(r1 - r0) * coeff_0 + Math.min(r0, r1)
+									g = Math.abs(g1 - g0) * coeff_0 + Math.min(g0, g1)
+									b = Math.abs(b1 - b0) * coeff_0 + Math.min(b0, b1)
+
+								colors.push(r / 255, g / 255, b / 255)
+
+		geometry.addAttribute('position', 
+			new THREE.BufferAttribute( new Float32Array(positions), 3 ) );
+
+		geometry.addAttribute('color', 
+			new THREE.BufferAttribute( new Float32Array(colors), 3 ) );
+
+		material = new THREE.PointCloudMaterial({vertexColors: THREE.VertexColors, size: radius, sizeAttenuation: true})
+
+		root.points = new THREE.PointCloud( geometry, material )
+
+		root.points.scale.set(scale_coeff, scale_coeff, scale_coeff)
+		root.points.sortParticles = true;
+
+		root.points

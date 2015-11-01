@@ -9,6 +9,7 @@ Scene
 	property var script_grid_flag: false
 	property var script_lib_flag_1: false
 	property var script_lib_flag_2: false
+	property var script_lib_flag_3: false
 
 	property var q: script_init()
 
@@ -44,6 +45,12 @@ Scene
 				"lib/three.js/examples/js/renderers/SVGRenderer.js",
 				function() { script_lib_flag_2 = true; });
 
+		if( !script_lib_flag_3 )
+			la_require(
+				$basePath + 
+				"lib/FileSaver.js/FileSaver.min.js",
+				function() { script_lib_flag_3 = true; });
+
 		if ( !script_grid_flag )
 			la_require( 
 				$basePath + "js/grid.js", 
@@ -77,6 +84,7 @@ Scene
 		property var f_visible
 		property var f_detail
 		property var f_filter
+		property var f_points
 
 		property var controls: {}
 		property var d_controls: {}
@@ -85,9 +93,9 @@ Scene
 		property var id_controls: []
 
 		property var filter_block: -1
-		property var filter_detail_i: [1, 1, 1]
-		property var filter_detail_j: [1, 1, 1]
-		property var filter_detail_k: [1, 1, 1]
+		property var filter_detail_i: [0, 1, 1]
+		property var filter_detail_j: [0, 1, 1]
+		property var filter_detail_k: [0, 1, 1]
 		property var items_filter: []
 
 		property var style_default: true
@@ -96,7 +104,7 @@ Scene
 		property var l_directions: [true, true, true, true]
 		property var l_colors: 
 			["#ffffff", "#ffffff", "#ffffff", "#000000"]
-		property var l_options: [false, true]
+		property var l_options: [false, false] //[false, true]
 
 		property var l_filter_directions: [true, true, true, true]
 		property var l_filter_colors: 
@@ -116,6 +124,14 @@ Scene
 
 		property var state_f_materials: 0
 		property var state_f_directions: 0
+
+		property var filter_controls_changed: 0
+
+		property var points_variable: ""
+		property var points_size: 0.25
+		property var point: []
+		property var point_size: 0.25
+		property var point_ind: []
 
 		onState_l_materialsChanged: {		
 
@@ -224,7 +240,7 @@ Scene
 
 				s_controls["Default Style"] = true;
 
-				var c = f_blocks.add(s_controls, "Default Style");
+				var c = f_blocks.add(s_controls, "Default Style").listen();
 
 				c.onFinishChange(function(value)
 				{ 
@@ -241,11 +257,6 @@ Scene
 							(grid.state_l_directions != 0)? 0: 1;
 						grid.state_f_directions = 
 							(grid.state_f_directions != 0)? 0: 1;
-
-						/*grid.state_l_materials = 
-							(grid.state_l_materials != 0)? 0: 1;
-						grid.state_f_directions = 
-							(grid.state_f_directions != 0)? 0: 1;*/
 					}
 					grid.style_default = value;
 				});	
@@ -273,6 +284,8 @@ Scene
 
 				fs_controls["Default Style"] = true;
 
+				f_points = gui.addFolder('Points');
+				
 				var f_export = gui.addFolder('Export');
 
 				renderer_SVG = new THREE.SVGRenderer();
@@ -280,8 +293,35 @@ Scene
 					window.innerWidth, window.innerHeight);
 
 				grid.controls["*.png"] = function() {
-						window.open(
-							$("body").children("canvas")[0].toDataURL());
+						try {
+							var isFileSaverSupported = !!new Blob;
+							
+							var canvas = $("body").children("canvas")[0], 
+								ctx = canvas.getContext("2d");
+
+							var binary = atob(
+								canvas.toDataURL("image/png").replace(
+									/^data:image\/(png|jpg);base64,/, "")
+								);
+
+							var raw_buffer = new ArrayBuffer(binary.length);
+							var integers = new Uint8Array(raw_buffer);
+								
+							for (var i = 0; i < binary.length; i++) {
+								integers[i] = binary.charCodeAt(i);
+							}
+
+							binary = raw_buffer;
+
+							var blob = new Blob([binary], {type: 'image/png'});
+							
+							saveAs(blob, "grid.png");
+
+						} catch (e) {
+							window.open(
+								$("body").children("canvas")[0].toDataURL());
+						}
+
 					};
 
 				grid.controls["*.svg [slow]"] = function() {
@@ -290,10 +330,16 @@ Scene
 
 						var svg = $("body").children("svg")[0];
 						var serializer = new XMLSerializer();
-						var svg_blob = new Blob([serializer.serializeToString(svg)], {'type': "image/svg+xml"});
-						var url = URL.createObjectURL(svg_blob);
+						var svg_blob = new Blob([serializer.serializeToString(svg)], 
+							{'type': "image/svg+xml"});
 
-						window.open(url);
+						try {
+							var isFileSaverSupported = !!new Blob;
+							saveAs(svg_blob, "grid.svg");
+						} catch (e) {
+							var url = URL.createObjectURL(svg_blob);
+							window.open(url);
+						}
 
 						document.body.removeChild( renderer_SVG.domElement );
 					};
@@ -328,7 +374,7 @@ Scene
 			f_lines.add(controls, "internal").onFinishChange(change_l_d);
 			f_lines.add(controls, "lines dashed").onFinishChange(change_l_m); 
 			f_lines.addColor(controls, "border color").onChange(change_l_m); 
-			f_lines.add(controls, "border bold").onFinishChange(change_l_m); 
+			//f_lines.add(controls, "border bold").onFinishChange(change_l_m); 
 							
 			f_faces.add(controls, "faces ij").onFinishChange(change_f_d);
 			f_faces.add(controls, "faces ik").onFinishChange(change_f_d);
@@ -369,6 +415,156 @@ Scene
 					Math.floor(loader.grid[ index ][0].length / 25) + 1,
 					Math.floor(loader.grid[ index ][0][0].length / 25) + 1
 				]
+
+			function filter_upd(value)
+			{
+				if (grid.s_controls["internal"])
+				{
+					grid.filter_controls_changed |= 1;
+					grid.s_controls["internal"] = false;
+				}
+							
+				if (grid.s_controls["Default Style"])
+				{
+					grid.filter_controls_changed |= 2;
+					grid.s_controls["Default Style"] = false;
+					grid.add_style_folders();
+				}
+							
+				grid.state_l_directions = 
+					(grid.state_l_directions != 0)? 0: 1;
+
+				grid.filter_block = value - 1;
+
+				while(grid.items_filter.length > 0)
+				{
+					var c = grid.items_filter.pop();
+					grid.f_filter.remove(c);
+				}
+
+				grid.f_filter.removeFolder("Lines Style");
+				grid.f_filter.removeFolder("Faces Style");
+
+				var c, t, l; 
+
+				l = loader.grid[value - 1][0][0].length;
+				t = "i (" + l.toString() + ")";
+				grid.controls[t] = 
+					"from " + (grid.filter_detail_i[0] + 1).toString() + 
+					" to " + (grid.filter_detail_i[1] + 1).toString() + 
+					" by " + (grid.filter_detail_i[2]).toString();
+				c = grid.f_filter.add(grid.controls, t).listen();
+				grid.items_filter.push(c);
+
+				c.onFinishChange(function(value)
+				{ 
+					var numb = value.match(/\d+/g);
+						
+					if(!!numb) {
+						var tmp = [1, 1, 1];
+						if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
+						if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
+							else tmp[1] = tmp[0] + 1;
+						if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
+						grid.filter_detail_i = [tmp[0], tmp[1], tmp[2]];
+					} else {
+						l = loader.grid[
+							grid.filter_block][0][0].length;
+						grid.filter_detail_i = [0, l - 1, 1];
+
+						t = "i (" + l.toString() + ")";
+						grid.controls[t] = 
+							"from 1 to " + l.toString() + " by 1";
+					}
+				});
+
+				l = loader.grid[value - 1][0].length;
+				t = "j (" + l.toString() + ")";
+				grid.controls[t] = 
+					"from " + (grid.filter_detail_j[0] + 1).toString() + 
+					" to " + (grid.filter_detail_j[1] + 1).toString() + 
+					" by " + (grid.filter_detail_j[2]).toString();
+				c = grid.f_filter.add(grid.controls, t).listen();
+				grid.items_filter.push(c);
+
+				c.onFinishChange(function(value)
+				{ 
+					var numb = value.match(/\d+/g);
+				
+					if(!!numb) {
+						var tmp = [1, 1, 1];
+						if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
+						if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
+							else tmp[1] = tmp[0] + 1;
+						if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
+						grid.filter_detail_j = [tmp[0], tmp[1], tmp[2]];
+					} else {
+						l = loader.grid[grid.filter_block][0].length;
+						grid.filter_detail_j = [0, l - 1, 1];
+
+						t = "j (" + l.toString() + ")";
+						grid.controls[t] = 
+							"from 1 to " + l.toString() + " by 1";
+					}
+				});
+
+				l = loader.grid[value - 1].length;
+				t = "k (" + l.toString() + ")";
+				grid.controls[t] = 
+					"from " + (grid.filter_detail_k[0] + 1).toString() + 
+					" to " + (grid.filter_detail_k[1] + 1).toString() + 
+					" by " + (grid.filter_detail_k[2]).toString();
+				c = grid.f_filter.add(grid.controls, t).listen();
+				grid.items_filter.push(c);
+
+				c.onFinishChange(function(value)
+				{ 
+					var numb = value.match(/\d+/g);
+				
+					if(!!numb) {
+						var tmp = [1, 1, 1];
+						if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
+						if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
+							else tmp[1] = tmp[0] + 1;
+						if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
+						grid.filter_detail_k = [tmp[0], tmp[1], tmp[2]];
+					} else {
+						l = loader.grid[grid.filter_block].length;
+						grid.filter_detail_k = [0, l - 1, 1];
+
+						t = "k (" + l.toString() + ")";
+						grid.controls[t] = "from 1 to " + 
+							l.toString() + " by 1";
+					}
+				});
+
+				c = grid.f_filter.add(grid.fs_controls, 
+					"Default Style");
+
+				if ( !grid.style_filter_default )
+					grid.add_fstyle_folders();
+
+				c.onFinishChange(function(value)
+				{ 
+					if ( value ) 
+					{
+						grid.f_filter.removeFolder("Lines Style");
+						grid.f_filter.removeFolder("Faces Style");
+					}
+					else
+					{
+						grid.add_fstyle_folders();
+						grid.state_l_directions = 
+							(grid.state_l_directions != 0)? 0: 1;
+						grid.state_f_directions = 
+							(grid.state_f_directions != 0)? 0: 1;
+					}
+
+					grid.style_filter_default = value;
+				});
+
+				grid.items_filter.push(c);
+			}
 			
 			function add_controls()
 			{
@@ -464,7 +660,7 @@ Scene
 					for ( var i = 1; i <= loader.grid.length; i++ ) 
 						lst.push(i.toString());
 
-					var c = grid.f_filter.add(grid.controls, "Block", lst);
+					var c = grid.f_filter.add(grid.controls, "Block", lst).listen();
 
 					grid.id_controls.push([grid.f_filter, c]);
 
@@ -472,134 +668,16 @@ Scene
 					{
 						if (value != "")
 						{
-							grid.filter_block = value - 1;
-
-							while(grid.items_filter.length > 0)
-							{
-								var c = grid.items_filter.pop();
-								grid.f_filter.remove(c);
-							}
-
-							grid.f_filter.removeFolder("Lines Style");
-							grid.f_filter.removeFolder("Faces Style");
-
-							var c, t, l; 
+							var l;
 
 							l = loader.grid[value - 1][0][0].length;
-							t = "i (" + l.toString() + ")";
-							grid.controls[t] = 
-								"from 1 to " + l.toString() + " by 1";
-							c = grid.f_filter.add(grid.controls, t).listen();
-							grid.items_filter.push(c);
 							grid.filter_detail_i = [0, l - 1, 1];
-
-							c.onFinishChange(function(value)
-							{ 
-								var numb = value.match(/\d+/g);
-						
-								if(!!numb) {
-									var tmp = [1, 1, 1];
-									if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
-									if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
-										else tmp[1] = tmp[0] + 1;
-									if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
-									grid.filter_detail_i = [tmp[0], tmp[1], tmp[2]];
-								} else {
-									l = loader.grid[
-										grid.filter_block][0][0].length;
-									grid.filter_detail_i = [0, l - 1, 1];
-
-									t = "i (" + l.toString() + ")";
-									grid.controls[t] = 
-										"from 1 to " + l.toString() + " by 1";
-								}
-							});
-
 							l = loader.grid[value - 1][0].length;
-							t = "j (" + l.toString() + ")";
-							grid.controls[t] = 
-								"from 1 to " + l.toString() + " by 1";
-							c = grid.f_filter.add(grid.controls, t).listen();
-							grid.items_filter.push(c);
 							grid.filter_detail_j = [0, l - 1, 1];
-
-							c.onFinishChange(function(value)
-							{ 
-								var numb = value.match(/\d+/g);
-						
-								if(!!numb) {
-									var tmp = [1, 1, 1];
-									if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
-									if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
-										else tmp[1] = tmp[0] + 1;
-									if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
-									grid.filter_detail_j = [tmp[0], tmp[1], tmp[2]];
-								} else {
-									l = loader.grid[
-										grid.filter_block][0].length;
-									grid.filter_detail_j = [0, l - 1, 1];
-
-									t = "j (" + l.toString() + ")";
-									grid.controls[t] = 
-										"from 1 to " + l.toString() + " by 1";
-								}
-							});
-
 							l = loader.grid[value - 1].length;
-							t = "k (" + l.toString() + ")";
-							grid.controls[t] = "from " + (l - 1).toString() + 
-								" to " + l.toString() + " by 1";
-							c = grid.f_filter.add(grid.controls, t).listen();
-							grid.items_filter.push(c);
 							grid.filter_detail_k = [l - 2, l - 1, 1];
 
-							c.onFinishChange(function(value)
-							{ 
-								var numb = value.match(/\d+/g);
-						
-								if(!!numb) {
-									var tmp = [1, 1, 1];
-									if (numb.length > 0) tmp[0] = parseInt(numb[0]) - 1;
-									if (numb.length > 1) tmp[1] = parseInt(numb[1]) - 1;
-										else tmp[1] = tmp[0] + 1;
-									if (numb.length > 2) tmp[2] = parseInt(numb[2]) - 1;
-									grid.filter_detail_k = [tmp[0], tmp[1], tmp[2]];
-								} else {
-									l = loader.grid[grid.filter_block].length;
-									grid.filter_detail_k = [0, l - 1, 1];
-
-									t = "k (" + l.toString() + ")";
-									grid.controls[t] = "from 1 to " + 
-										l.toString() + " by 1";
-								}
-							});
-
-							c = grid.f_filter.add(grid.fs_controls, 
-								"Default Style");
-
-							if ( !grid.style_filter_default )
-								grid.add_fstyle_folders();
-
-							c.onFinishChange(function(value)
-							{ 
-								if ( value ) 
-								{
-									grid.f_filter.removeFolder("Lines Style");
-									grid.f_filter.removeFolder("Faces Style");
-								}
-								else
-								{
-									grid.add_fstyle_folders();
-									grid.state_l_directions = 
-										(grid.state_l_directions != 0)? 0: 1;
-									grid.state_f_directions = 
-										(grid.state_f_directions != 0)? 0: 1;
-								}
-
-								grid.style_filter_default = value;
-							});
-
-							grid.items_filter.push(c);
+							filter_upd(value);
 						} 
 						else
 						{
@@ -613,8 +691,157 @@ Scene
 
 							grid.f_filter.removeFolder("Lines Style");
 							grid.f_filter.removeFolder("Faces Style");
+
+							if(grid.filter_controls_changed != 0)
+							{
+								if ((1 & grid.filter_controls_changed) == 1)
+								{
+									grid.s_controls["internal"] = true;
+								}
+								
+								if ((2 & grid.filter_controls_changed) == 2)
+								{
+									grid.s_controls["Default Style"] = true;
+									grid.style_default = true;
+									grid.f_blocks.removeFolder("Lines Style");
+									grid.f_blocks.removeFolder("Faces Style");
+								}
+
+								grid.filter_controls_changed = 0;
+								
+								grid.state_l_directions = 
+									(grid.state_l_directions != 0)? 0: 1;
+							}
 						} 
 					});
+
+					if (loader.grid[0][0][0][0].length > 3) {
+
+						grid.controls["variable"] = "";
+
+						var lst = [""];
+
+						for ( var i = 1; i <= loader.grid[0][0][0][0].length - 3; i++ ) 
+							lst.push(i.toString());
+
+						var c = grid.f_points.add(grid.controls, "variable", lst).listen();
+
+						grid.id_controls.push([grid.f_points, c]);
+
+						c.onFinishChange(function(value)
+						{
+							grid.points_variable = value;
+						});
+
+						grid.controls["point size"] = 0.25;
+
+						var c = grid.f_points.add(grid.controls, "point size", 0, 0.5).step(0.05)
+						
+						c.onFinishChange(function(value)
+						{
+							grid.points_size = value;
+							if ( grid.points_variable == "" && value != 0 && 
+								loader.grid[0][0][0][0].length > 3)
+							{
+								grid.controls["variable"] = "1";
+								grid.points_variable = "1";
+							}
+						});
+					}
+
+					function keypress_event(e) 
+					{
+						var ch = String.fromCharCode(e.keyCode);
+
+						if (ch != 'k' && ch != 'K' && ch != 'j' && ch != 'J' &&
+							ch != 'i' && ch != 'I' && ch != 'b' && ch != 'B' &&
+							ch != 'л' && ch != 'Л' && ch != 'о' && ch != 'О' &&
+							ch != 'ш' && ch != 'Ш' && ch != 'и' && ch != 'И')
+							return;
+
+						if (grid.filter_block < 0)
+						{
+							grid.controls["Block"] = "1";
+
+							grid.filter_detail_i = [0, 1, 1];
+							grid.filter_detail_j = [0, 1, 1];
+							grid.filter_detail_k = [0, 1, 1];
+							grid.filter_block = 0;
+
+							filter_upd("1");
+						}
+						else 
+						{
+							var b = grid.filter_block;
+
+							var k = grid.filter_detail_k[0];
+							var j = grid.filter_detail_j[0];
+							var i = grid.filter_detail_i[0];
+
+							switch(ch)
+							{
+								case 'k':
+								case 'л': 
+									if ( k < loader.grid[b].length - 2 ) k++; 
+									else k = loader.grid[b].length - 2; 
+									break;
+								case 'K':
+								case 'Л':
+									if (k > 1) k--; else k = 1; 
+									break;
+								case 'j': 
+								case 'о': 
+									if ( j < loader.grid[b][0].length - 2 ) j++; 
+									else j = loader.grid[b][0].length - 2; 
+									break;
+								case 'J':
+								case 'О': 
+									if (j > 1) j--; else j = 1; 
+									break;
+								case 'i': 
+								case 'ш': 
+									if ( i < loader.grid[b][0][0].length - 2 ) i++;
+									else i = loader.grid[b][0][0].length - 2;
+									break;
+								case 'I':
+								case 'Ш': 
+									if (i > 1) i--; else i = 1; 
+									break;
+								case 'b':
+								case 'и':
+									if( b < loader.grid.length - 1 ) b++; else b = 0;
+									if (k > loader.grid[b].length - 2 ) 
+										k = loader.grid[b].length - 2;
+									if (j > loader.grid[b][0].length - 2 ) 
+										j = loader.grid[b][0].length - 2;
+									if (i > loader.grid[b][0][0].length - 2 ) 
+										i = loader.grid[b][0][0].length - 2;
+									break;
+								case 'B':
+								case 'И':
+									if(b > 1) b--; else b = loader.grid.length - 1;
+									if (k > loader.grid[b].length - 2 ) 
+										k = loader.grid[b].length - 2;
+									if (j > loader.grid[b][0].length - 2 ) 
+										j = loader.grid[b][0].length - 2;
+									if (i > loader.grid[b][0][0].length - 2 ) 
+										i = loader.grid[b][0][0].length - 2;
+									break;
+							}
+
+							grid.filter_detail_k = [k, k + 1, 1];
+							grid.filter_detail_j = [j, j + 1, 1];
+							grid.filter_detail_i = [i, i + 1, 1];
+
+							grid.filter_block = b;
+
+							grid.controls["Block"] = (b + 1).toString();
+
+							filter_upd((b + 1).toString());
+						}
+					}
+					
+					window.addEventListener( "keypress", keypress_event, false );
 				}
 			}
 
@@ -667,6 +894,208 @@ Scene
 				filter_colors: grid.f_filter_colors
 				filter_options: grid.f_filter_options
 			}
+
+			GridPoints
+			{
+				id: gridpoints
+				visible: block.option_visible
+				data: loader.grid[ block.z ]
+				scale_coeff: loader.scale_coeff
+				variable: grid.points_variable
+				min: loader.min
+				max: loader.max
+				index: block.z
+				colors: legend.colors
+				radius: grid.points_size
+			}
 		}
 	}
+
+	SceneMouseEvents {
+		
+		onDoubleClicked: {			
+			
+			var min;
+			var min_r;
+			var min_ind;
+
+			for (var i = 0; i < grid['$items'].length ; i++) {
+				
+				var gridpoints = grid['$items'][i]['$tidyupList'][3];
+
+				var r = gridpoints.intersect( sceneMouse );
+
+				if (!!r && grid['$items'][i].option_visible)
+				{
+					if (!min || r.distance < min)
+					{
+						min = r.distance;
+						min_r = r;
+						min_ind = gridpoints.index;
+					}
+				}
+
+			};
+
+			if (!!min_r)
+			{
+				var nk, nj, ni, k, j, i;
+
+				ni = loader.grid[ min_ind ][0][0].length;
+				nj = loader.grid[ min_ind ][0].length;
+				nk = loader.grid[ min_ind ].length;
+
+				k = Math.floor(min_r.index / (ni * nj));
+				j = Math.floor((min_r.index - k * ni * nj) / ni);
+				i = min_r.index - k * ni * nj - j * ni;
+
+				tmp = loader.grid[ min_ind ][k][j][i];
+
+				if (grid.point[0] != tmp[0] || grid.point[1] != tmp[1] || 
+					grid.point[2] != tmp[2])
+				{
+					grid.point_size = grid.points_size * 2;
+					grid.point = tmp;
+					grid.point_ind = [min_ind, k, j, i];
+				}
+				else
+				{
+					grid.point_size = (grid.point_size == grid.points_size)?
+						grid.points_size * 2: grid.points_size
+				}
+			}
+		}
+	}
+
+	GridPoints
+	{
+		visible: (!!grid.point && grid.point.length > 3)
+		data: (!!grid.point && grid.point.length > 3)? [[[ grid.point.slice() ]]]: []
+		scale_coeff: loader.scale_coeff
+		variable: grid.points_variable
+		min: loader.min
+		max: loader.max
+		colors: legend.colors
+		radius: grid.point_size
+	}
+
+	Column
+	{
+		property var tag: "left"
+
+		Text
+		{
+			text: (grid.points_variable != "" && 
+					parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length && 
+					!!grid.point && grid.point.length > 3 &&
+					grid.point_size != grid.points_size)? msg(): ""
+			
+			function msg()
+			{
+				var m = "Selected: \n";
+
+				m += "block: " + grid.point_ind[0] + "; "; 
+
+				if(grid.point_ind.length > 2)
+				{
+					m += "i: " + grid.point_ind[3] + "; j: " +
+						 grid.point_ind[2] + "; k: " + grid.point_ind[1] + ";\n\n";
+				}
+
+				if(grid.point.length > 2)
+				{
+					m += "x = " + grid.point[0] + ";\ny = " +
+						 grid.point[1] + ";\nz = " + grid.point[2] + ";\n\n";
+				}
+
+				for(var i = 3; i < grid.point.length; i++)
+				{
+					m += (parseInt(grid.points_variable) + 2 != i)? grid.point[i] + ";\n": 
+						"[" + grid.point[i] + "];\n";
+				}
+
+				return m + "\n";
+			}
+		}
+
+		Text
+		{
+			text: (grid.points_variable != "" && 
+					parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length )? 
+					"Points:": ""
+		}
+
+		Column
+		{
+
+			Row
+			{
+				Item
+				{
+					id: legend
+
+					height: 18
+					width: 180
+
+					property var htmlNode
+					property var colors:
+						["#0022ff", "#00ddff", "#66ff33", "#ffff00", "#ffbb00", "#ff2200"];
+					
+					property var scalar: (grid.points_variable == "" || 
+						parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length)? 
+							grid.points_variable : ""
+
+					property var range: (grid.points_variable != "" && 
+						parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length)? 
+						[loader.min[parseInt(grid.points_variable) + 2], 
+						loader.max[parseInt(grid.points_variable) + 2]]: 
+						[0, 1]
+
+					Component.onCompleted: {
+
+						legend.dom.innerHTML = "<div>" + 
+							"<canvas id='legend' " + "width='" + width + "' height='" + 
+								height + "' style='position: relative'> </canvas>" + 
+							"<div style='position: relative; float: left;'>" + 
+								range[0].toString() + "</div>" + 
+							"<div style='position: relative; float: right;'>" + 
+								range[1].toString() + "</div>" + 
+							"</div>";
+
+						var canvas = legend.dom.firstChild.firstChild;
+						var ctx = canvas.getContext("2d");
+						ctx.rect(0, 0, canvas.width, canvas.height);
+						var gradient = ctx.createLinearGradient(0, 0, width, 0);
+
+						for(var i = 0; i < colors.length; i++)
+						{
+							gradient.addColorStop(i / (colors.length - 1), colors[i]);			
+						}
+
+						ctx.fillStyle = gradient;
+						ctx.fillRect(0, 0, width, height);
+
+						htmlNode = legend.dom.firstChild;
+						htmlNode.style.display = "none";
+					}
+
+					onRangeChanged: 
+					{
+						var child = htmlNode.childNodes;
+						if (!!child && child.length > 2 && range.length > 1)
+						{
+							child[1].innerHTML = range[0];
+							child[2].innerHTML = range[1];
+						}
+					}
+
+					onScalarChanged:
+					{
+						if(!!htmlNode)
+							htmlNode.style.display = (scalar == "")? "none": "block";
+					}
+				}
+			}
+		}
+	}	
 }

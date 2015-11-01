@@ -63,15 +63,18 @@ SceneObject
 					filter_materials[i] = tmp;
 			};
 
-			this.sceneObject = GridFaces.init(
-					data, scale_coeff, 
-					detail, directions, materials, 
-					filter, filter_directions, filter_materials
-				);
+			if (directions[0] || directions[1] || directions[2] || (filter.length > 0))
+			{
+				this.sceneObject = GridFaces.init(
+						data, scale_coeff, 
+						detail, directions, materials, 
+						filter, filter_directions, filter_materials
+					);
 
-			scene.add(this.sceneObject);
+				scene.add(this.sceneObject);
 
-			this.sceneObject.visible = visible;
+				this.sceneObject.visible = visible;
+			}
 		}
 	}
 
@@ -104,8 +107,17 @@ SceneObject
 						return;
 					}
 
+					if (filter.length < 3 && 
+						(!directions[0] && !directions[1] && directions[2])) {
+						mat_colors = [colors[2], colors[0], colors[1]];
+					} else if (filter.length < 3 && directions[1] && (!directions[0])) {
+						mat_colors = [colors[1], colors[2], colors[0]];
+					} else { 
+						mat_colors = [colors[0], colors[1], colors[2]];
+					}
+
 					item.material = new THREE.MeshBasicMaterial({ 
-						color: (n < 3)? colors[n]: filter_colors[n - 3], 
+						color: (n < 3)? mat_colors[n]: filter_colors[n - 3], 
 						side: THREE.FrontSide, transparent: true,
 						opacity: (n < 3)? options[0]: filter_options[0]
 					} );
