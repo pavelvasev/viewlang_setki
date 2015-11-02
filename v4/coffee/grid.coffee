@@ -298,32 +298,6 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 		if dir != 2
 			f3 = if i >= filter[2][0] and i < filter[2][1] then true else false
 
-
-		#if dir == 0
-		#	if !filter_directions[0] and filter[0][0] != filter[0][1]
-		#		f1 = if k > filter[0][0] and k < filter[0][1] then true else false
-		#	else
-		#		f1 = if k >= filter[0][0] and k <= filter[0][1] then true else false
-		#else
-		#	f1 = if k >= filter[0][0] and k <= filter[0][1] then true else false
-
-		#if dir == 1
-		#	if !filter_directions[1] and filter[1][0] != filter[1][1]
-		#		f2 = if j > filter[1][0] and j < filter[1][1] then true else false
-		#	else
-		#		f2 = if j >= filter[1][0] and j <= filter[1][1] then true else false
-		#else
-		#	f2 = if j >= filter[1][0] and j <= filter[1][1] then true else false
-
-		#if dir == 2
-		#	if !filter_directions[2] and filter[2][0] != filter[2][1]
-		#		f3 = if i > filter[2][0] and i < filter[2][1] then true else false
-		#	else
-		#		f3 = if i >= filter[2][0] and i <= filter[2][1] then true else false
-		#else
-		#	f3 = if i >= filter[2][0] and i <= filter[2][1] then true else false
-			
-
 		f1 && f2 && f3
 
 	i_part = (dir, i_index, k1, k2, j1, j2) ->
@@ -806,9 +780,9 @@ root.GridPoints =
 
 									coeff_0 = coeff * (paletter.length - 1) - coeff_int
 
-									r = Math.abs(r1 - r0) * coeff_0 + Math.min(r0, r1)
-									g = Math.abs(g1 - g0) * coeff_0 + Math.min(g0, g1)
-									b = Math.abs(b1 - b0) * coeff_0 + Math.min(b0, b1)
+									r = (r1 - r0) * coeff_0 + r0
+									g = (g1 - g0) * coeff_0 + g0
+									b = (b1 - b0) * coeff_0 + b0
 
 								colors.push(r / 255, g / 255, b / 255)
 

@@ -958,9 +958,9 @@
                   g1 = (paletter[coeff_int + 1] & 0x00ff00) >> 8;
                   b1 = paletter[coeff_int + 1] & 0x0000ff;
                   coeff_0 = coeff * (paletter.length - 1) - coeff_int;
-                  r = Math.abs(r1 - r0) * coeff_0 + Math.min(r0, r1);
-                  g = Math.abs(g1 - g0) * coeff_0 + Math.min(g0, g1);
-                  b = Math.abs(b1 - b0) * coeff_0 + Math.min(b0, b1);
+                  r = (r1 - r0) * coeff_0 + r0;
+                  g = (g1 - g0) * coeff_0 + g0;
+                  b = (b1 - b0) * coeff_0 + b0;
                 }
                 return colors.push(r / 255, g / 255, b / 255);
               })(i));
