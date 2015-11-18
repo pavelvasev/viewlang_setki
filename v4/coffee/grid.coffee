@@ -62,8 +62,10 @@ root.gen_lines = (data, scale_coeff, lst,
 		calc_material = (dir, k, j, i) ->
 
 			if last_border_line(dir, k, j, i) 
+				#m = [ new THREE.LineBasicMaterial({ 
+				#	color: border_color, linewidth: 2.5 }), coeff + 4 ]
 				m = [ new THREE.LineBasicMaterial({ 
-					color: border_color, linewidth: 2.5 }), coeff + 4 ]
+					color: border_color, linewidth: 1 }), coeff + 4 ]
 			else if border_line(dir, k, j, i)
 				m = [ new THREE.LineBasicMaterial({ 
 					color: border_color, linewidth: 1 }), coeff + 3 ]
@@ -160,7 +162,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 		vec = (k, j, i) -> 
 			new THREE.Vector3(data[j][i][k][0], data[j][i][k][1], data[j][i][k][2])
 
-		detail = [det[1], det[2], det[0]]
+		detail = [det[2], det[0], det[1]]
 		directions = [dir[2], dir[0], dir[1]]
 		materials = [mat[2], mat[0], mat[1]] 
 
@@ -173,7 +175,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 		vec = (k, j, i) -> 
 			new THREE.Vector3(data[i][k][j][0], data[i][k][j][1], data[i][k][j][2])
 
-		detail = [det[2], det[0], det[1]]
+		detail = [det[1], det[2], det[0]]
 		directions = [dir[1], dir[2], dir[0]] 
 		materials = [mat[1], mat[2], mat[0]] 
 
@@ -737,6 +739,8 @@ root.GridPoints =
 
 		geometry = new THREE.BufferGeometry()
 
+		root.cubes = new THREE.Object3D()
+
 		paletter = []
 
 		for i in [0..color.length - 1]
@@ -751,11 +755,11 @@ root.GridPoints =
 		positions = []
 		colors = []
 
-		for k in data
+		for k, k_index in data
 			do (k) ->
-				for j in k
+				for j, j_index in k
 					do (j) ->
-						for i in j
+						for i, i_index in j
 							do (i) ->
 								positions.push(i[0], i[1], i[2])
 								
@@ -786,6 +790,27 @@ root.GridPoints =
 
 								colors.push(r / 255, g / 255, b / 255)
 
+								if k_index == 0 || k_index == data.length - 1 ||
+								j_index == 0 || j_index == k.length - 1 ||
+								i_index == 0 || i_index = j.index - 1
+									
+									boxgeometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+
+									boxmaterial = new THREE.MeshBasicMaterial( 
+										{ color: ((r << 16) + (g << 8) +  b) } )
+
+									sceneObject = new THREE.Mesh( boxgeometry, boxmaterial )
+
+									sceneObject.position.x = i[0] * scale_coeff
+									sceneObject.position.y = i[1] * scale_coeff
+									sceneObject.position.z = i[2] * scale_coeff
+
+									sceneObject.scale.x = 5 * radius
+									sceneObject.scale.y = 5 * radius
+									sceneObject.scale.z = 5 * radius
+
+									root.cubes.add( sceneObject )
+
 		geometry.addAttribute('position', 
 			new THREE.BufferAttribute( new Float32Array(positions), 3 ) );
 
@@ -799,4 +824,4 @@ root.GridPoints =
 		root.points.scale.set(scale_coeff, scale_coeff, scale_coeff)
 		root.points.sortParticles = true;
 
-		root.points
+		[root.points, root.cubes]

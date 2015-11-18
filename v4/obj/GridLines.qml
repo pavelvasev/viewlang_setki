@@ -57,8 +57,10 @@ SceneObject
 				var tmp;
 
 				if (options[1])
+					//tmp = new THREE.LineBasicMaterial({ 
+					//	color: colors[3], linewidth: 2.5 });
 					tmp = new THREE.LineBasicMaterial({ 
-						color: colors[3], linewidth: 2.5 });
+						color: colors[3], linewidth: 1 });
 				else
 					tmp = new THREE.LineBasicMaterial({ 
 						color: colors[3], linewidth: 1 });
@@ -90,8 +92,10 @@ SceneObject
 				var tmp;
 
 				if (filter_options[1])
+					//tmp = new THREE.LineBasicMaterial({ 
+					//	color: filter_colors[3], linewidth: 2.5 });
 					tmp = new THREE.LineBasicMaterial({ 
-						color: filter_colors[3], linewidth: 2.5 });
+						color: filter_colors[3], linewidth: 1 });
 				else 
 					tmp = new THREE.LineBasicMaterial({ 
 						color: filter_colors[3], linewidth: 1 });
@@ -150,8 +154,10 @@ SceneObject
 
 				if (n == 4) {
 					if (opt[1])
+						//item.material = new THREE.LineBasicMaterial({ 
+						//	color: c[3], linewidth: 2.5 });
 						item.material = new THREE.LineBasicMaterial({ 
-							color: c[3], linewidth: 2.5 });
+							color: c[3], linewidth: 1 });
 					else
 						item.material = new THREE.LineBasicMaterial({ 
 							color: c[3], linewidth: 1 });

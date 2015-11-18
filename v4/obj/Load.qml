@@ -111,7 +111,7 @@ Item
 	function calc_scale_coeff(Min, Max) {
 		var m = Math.max(
 				Math.abs(Min[0]), Math.abs(Min[1]), Math.abs(Min[2]),
-				Max[0], Max[1], Max[3]
+				Max[0], Max[1], Max[2]
 			);
 
 		return Math.round(25 / m);

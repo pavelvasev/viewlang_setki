@@ -78,7 +78,7 @@
           m = [
             new THREE.LineBasicMaterial({
               color: border_color,
-              linewidth: 2.5
+              linewidth: 1
             }), coeff + 4
           ];
         } else if (border_line(dir, k, j, i)) {
@@ -227,7 +227,7 @@
       vec = function(k, j, i) {
         return new THREE.Vector3(data[j][i][k][0], data[j][i][k][1], data[j][i][k][2]);
       };
-      detail = [det[1], det[2], det[0]];
+      detail = [det[2], det[0], det[1]];
       directions = [dir[2], dir[0], dir[1]];
       materials = [mat[2], mat[0], mat[1]];
       k_last = data[0][0].length - 1;
@@ -237,7 +237,7 @@
       vec = function(k, j, i) {
         return new THREE.Vector3(data[i][k][j][0], data[i][k][j][1], data[i][k][j][2]);
       };
-      detail = [det[2], det[0], det[1]];
+      detail = [det[1], det[2], det[0]];
       directions = [dir[1], dir[2], dir[0]];
       materials = [mat[1], mat[2], mat[0]];
       k_last = data[0].length - 1;
@@ -916,8 +916,9 @@
 
   root.GridPoints = {
     init: function(data, scale_coeff, variable, min, max, index, color, radius) {
-      var colors, fn, fn1, geometry, i, k, len, material, n, o, paletter, positions, ref, v0, v1;
+      var colors, fn, fn1, geometry, i, k, k_index, len, material, n, o, paletter, positions, ref, v0, v1;
       geometry = new THREE.BufferGeometry();
+      root.cubes = new THREE.Object3D();
       paletter = [];
       fn = function(i) {
         return paletter.push(parseInt(color[i].substring(1), 16));
@@ -931,17 +932,17 @@
       positions = [];
       colors = [];
       fn1 = function(k) {
-        var j, len1, p, results;
+        var j, j_index, len1, p, results;
         results = [];
-        for (p = 0, len1 = k.length; p < len1; p++) {
-          j = k[p];
+        for (j_index = p = 0, len1 = k.length; p < len1; j_index = ++p) {
+          j = k[j_index];
           results.push((function(j) {
-            var len2, q, results1;
+            var i_index, len2, q, results1;
             results1 = [];
-            for (q = 0, len2 = j.length; q < len2; q++) {
-              i = j[q];
+            for (i_index = q = 0, len2 = j.length; q < len2; i_index = ++q) {
+              i = j[i_index];
               results1.push((function(i) {
-                var b, b0, b1, coeff, coeff_0, coeff_int, g, g0, g1, r, r0, r1, value;
+                var b, b0, b1, boxgeometry, boxmaterial, coeff, coeff_0, coeff_int, g, g0, g1, r, r0, r1, sceneObject, value;
                 positions.push(i[0], i[1], i[2]);
                 value = i[variable];
                 coeff = (value - v0) / (v1 - v0);
@@ -962,7 +963,21 @@
                   g = (g1 - g0) * coeff_0 + g0;
                   b = (b1 - b0) * coeff_0 + b0;
                 }
-                return colors.push(r / 255, g / 255, b / 255);
+                colors.push(r / 255, g / 255, b / 255);
+                if (k_index === 0 || k_index === data.length - 1 || j_index === 0 || j_index === k.length - 1 || i_index === 0 || (i_index = j.index - 1)) {
+                  boxgeometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+                  boxmaterial = new THREE.MeshBasicMaterial({
+                    color: (r << 16) + (g << 8) + b
+                  });
+                  sceneObject = new THREE.Mesh(boxgeometry, boxmaterial);
+                  sceneObject.position.x = i[0] * scale_coeff;
+                  sceneObject.position.y = i[1] * scale_coeff;
+                  sceneObject.position.z = i[2] * scale_coeff;
+                  sceneObject.scale.x = 5 * radius;
+                  sceneObject.scale.y = 5 * radius;
+                  sceneObject.scale.z = 5 * radius;
+                  return root.cubes.add(sceneObject);
+                }
               })(i));
             }
             return results1;
@@ -970,8 +985,8 @@
         }
         return results;
       };
-      for (o = 0, len = data.length; o < len; o++) {
-        k = data[o];
+      for (k_index = o = 0, len = data.length; o < len; k_index = ++o) {
+        k = data[k_index];
         fn1(k);
       }
       geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
@@ -984,7 +999,7 @@
       root.points = new THREE.PointCloud(geometry, material);
       root.points.scale.set(scale_coeff, scale_coeff, scale_coeff);
       root.points.sortParticles = true;
-      return root.points;
+      return [root.points, root.cubes];
     }
   };
 

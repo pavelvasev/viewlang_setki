@@ -10,6 +10,7 @@ SceneObjectThreeJs
 	property var index: 0
 	property var colors: ["#000000", "#ffffff"]
 	property var radius: 0.25
+	property var cubes
 
 	function make3d() {
 
@@ -20,11 +21,15 @@ SceneObjectThreeJs
 		if ( data.length && variable != "" && 
 			parseInt(variable) + 3 <= data[0][0][0].length ) {
 
-			this.sceneObject = GridPoints.init(
+			ref = GridPoints.init(
 					data, scale_coeff, variable, min, max, index, colors, radius
 				);
 
+			this.sceneObject = ref[0];
+			cubes = ref[1];
+
 			scene.add(this.sceneObject);
+
 			this.sceneObject.visible = visible;
 		}
 	}
@@ -41,6 +46,17 @@ SceneObjectThreeJs
 		if (!this.sceneObject || !this.sceneObject.material) return;
 		this.sceneObject.material.size = radius;
 		this.sceneObject.material.needsUpdate = true;
+
+		if(cubes) {
+
+			for (var i = cubes.children.length - 1; i >= 0; i--) {
+				var obj = cubes.children[i];
+
+				obj.scale.x = 5 * radius;
+				obj.scale.y = 5 * radius;
+				obj.scale.z = 5 * radius;
+			}
+		}
     }
 
     onDataChanged: makeLater(this);
@@ -50,6 +66,21 @@ SceneObjectThreeJs
 	function clear() {
 		clearobj( this.sceneObject ); 
 		this.sceneObject = undefined;
+
+		if(cubes) {
+
+			for (var i = cubes.children.length - 1; i >= 0; i--) {
+				var obj = cubes.children[i];
+
+				if (obj.geometry) obj.geometry.dispose();
+				if (obj.material) obj.material.dispose();
+				if (obj.texture) obj.texture.dispose();
+
+				obj = undefined;
+			};
+			
+			cubes = undefined;
+		}
 	}
 	
 	function clearobj(obj) {

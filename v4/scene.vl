@@ -133,6 +133,8 @@ Scene
 		property var point_size: 0.25
 		property var point_ind: []
 
+		property var cubes: []
+
 		onState_l_materialsChanged: {		
 
 			l_colors = [
@@ -288,10 +290,6 @@ Scene
 				
 				var f_export = gui.addFolder('Export');
 
-				renderer_SVG = new THREE.SVGRenderer();
-				renderer_SVG.setSize( 
-					window.innerWidth, window.innerHeight);
-
 				grid.controls["*.png"] = function() {
 						try {
 							var isFileSaverSupported = !!new Blob;
@@ -325,7 +323,41 @@ Scene
 					};
 
 				grid.controls["*.svg [slow]"] = function() {
-						renderer_SVG.render(scene, camera);
+
+						renderer_SVG = new THREE.SVGRenderer();
+
+						renderer_SVG.setSize( 
+							window.innerWidth, window.innerHeight);
+
+						var cubes = [];
+
+						for ( var i = 0; i < grid['$items'].length; i++ )
+						{
+							if(grid['$items'][i].children[2]['$properties']['visible'].val
+								&& !! grid['$items'][i].children[2]['$properties']['cubes'].val )
+							{
+								cubes.push(
+									grid['$items'][i].children[2]['$properties']['cubes'].val);
+							}
+						}
+
+						if(cubes.length > 0)
+						{
+							var svgscene = jQuery.extend(true, {}, scene);
+
+							for (var i = 0; i < cubes.length; i++) {
+								svgscene.add(cubes[i]);
+							}
+
+							renderer_SVG.render(svgscene, camera);
+
+							svgscene = undefined;
+						}
+						else
+						{
+							renderer_SVG.render(scene, camera);
+						}
+
 						document.body.appendChild( renderer_SVG.domElement );
 
 						var svg = $("body").children("svg")[0];
@@ -350,7 +382,7 @@ Scene
 		}
 
 		function add_style_controls(f_lines, f_faces, controls)
-		{
+		{			
 			var change_l_m = function(value) { 
 				grid.state_l_materials =
 					(grid.state_l_materials != 0)? 0: 1; }
@@ -371,7 +403,7 @@ Scene
 			f_lines.addColor(controls, "lines i color").onChange(change_l_m); 
 			f_lines.addColor(controls, "lines j color").onChange(change_l_m); 
 			f_lines.addColor(controls, "lines k color").onChange(change_l_m);
-			f_lines.add(controls, "internal").onFinishChange(change_l_d);
+			f_lines.add(controls, "internal").onFinishChange(change_l_d).listen();
 			f_lines.add(controls, "lines dashed").onFinishChange(change_l_m); 
 			f_lines.addColor(controls, "border color").onChange(change_l_m); 
 			//f_lines.add(controls, "border bold").onFinishChange(change_l_m); 
@@ -388,6 +420,9 @@ Scene
 
 		function add_style_folders()
 		{
+			f_blocks.removeFolder("Lines Style");
+			f_blocks.removeFolder("Faces Style");
+
 			var f_lines = f_blocks.addFolder("Lines Style");
 			var f_faces = f_blocks.addFolder("Faces Style");
 
@@ -428,6 +463,8 @@ Scene
 				{
 					grid.filter_controls_changed |= 2;
 					grid.s_controls["Default Style"] = false;
+					grid.style_default = false;
+
 					grid.add_style_folders();
 				}
 							
@@ -703,6 +740,7 @@ Scene
 								{
 									grid.s_controls["Default Style"] = true;
 									grid.style_default = true;
+
 									grid.f_blocks.removeFolder("Lines Style");
 									grid.f_blocks.removeFolder("Faces Style");
 								}
@@ -737,6 +775,8 @@ Scene
 
 						var c = grid.f_points.add(grid.controls, "point size", 0, 0.5).step(0.05)
 						
+						grid.id_controls.push([grid.f_points, c]);
+
 						c.onFinishChange(function(value)
 						{
 							grid.points_size = value;
