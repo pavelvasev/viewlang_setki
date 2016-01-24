@@ -7,6 +7,8 @@ Item
 	property var min: []
 	property var max: []
 
+	property var types: []
+
 	property var q: load()
 
 	function load() {
@@ -25,6 +27,8 @@ Item
 
 		var Min = [];
 		var Max = [];
+
+		types = [];
 
 		var re_zone = /.*ZONE I=\s*(\d+),\s*J=\s*(\d+),\s*K=\s*(\d+),.*/i;
 
@@ -71,6 +75,20 @@ Item
 
 						if (Max.length == j) { Max.push(numb[j])} 
 							else if(Max[j] < numb[j]) { Max[j] = numb[j]; };
+
+						if (j > 2)	{
+							if (types.length == j - 3) types.push({});
+
+							if (!!types[j - 3])
+							{
+								n = numb[j];
+
+								if (Number(n) === n && n % 1 !== 0)
+									types[j - 3] = null;
+								else
+									types[j - 3][n] = 1;
+							}
+						}
 					};
 
 					currI.push(numb);

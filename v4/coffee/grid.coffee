@@ -61,17 +61,16 @@ root.gen_lines = (data, scale_coeff, lst,
 		
 		calc_material = (dir, k, j, i) ->
 
-			if last_border_line(dir, k, j, i) 
-				#m = [ new THREE.LineBasicMaterial({ 
-				#	color: border_color, linewidth: 2.5 }), coeff + 4 ]
-				m = [ new THREE.LineBasicMaterial({ 
-					color: border_color, linewidth: 1 }), coeff + 4 ]
-			else if border_line(dir, k, j, i)
+			#if last_border_line(dir, k, j, i) 
+			#	m = [ new THREE.LineBasicMaterial({ 
+			#		color: border_color, linewidth: 2.5 }), coeff + 4 ]
+
+			if border_line(dir, k, j, i)
 				m = [ new THREE.LineBasicMaterial({ 
 					color: border_color, linewidth: 1 }), coeff + 3 ]
 			else
 
-				mid = if filter == true then 0xff else 0x88
+				mid = if filter == true then 0xff else 0x55
 
 				i_coeff = if dir == 0 then mid else (i - i_first) / 
 					i_size * 0xff
@@ -80,7 +79,7 @@ root.gen_lines = (data, scale_coeff, lst,
 				k_coeff = if dir == 2 then mid else (k - k_first) / 
 					k_size * 0xff
 
-				color = (i_coeff << 16) + (j_coeff << 8) + k_coeff
+				color = (i_coeff << 16) + (k_coeff << 8) + j_coeff
 
 				m = [ new THREE.LineBasicMaterial(
 					{ color: color, linewidth: 1 }), dir + coeff ]
@@ -97,6 +96,35 @@ root.gen_lines = (data, scale_coeff, lst,
 				m = if directions[3] then [ materials[dir], dir + coeff ] else []
 			m
 
+	border_material = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.DoubleSide } )
+	
+	border_points = (dir, a, b, x_seg, pnts, faces) ->
+		
+		for x, x_ind in x_seg
+			do (x) ->
+				if dir == 0
+					[k, j, i] = [a, b, x]
+				else if dir == 1
+					[k, j, i] = [a, x, b]
+				else if dir == 2
+					[k, j, i] = [x, a, b]
+
+				pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff + 0.05, 
+					data[k][j][i][1] * scale_coeff, data[k][j][i][2] * scale_coeff))
+				pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff, 
+					data[k][j][i][1] * scale_coeff + 0.05, data[k][j][i][2] * scale_coeff))
+				pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff, 
+					data[k][j][i][1] * scale_coeff, data[k][j][i][2] * scale_coeff + 0.05))
+				
+				if x_ind != 0
+					s = (x_ind - 1) * 3
+					faces.push(new THREE.Face3(s, s + 1, s + 3))
+					faces.push(new THREE.Face3(s + 1, s + 2, s + 4))
+					faces.push(new THREE.Face3(s + 2, s, s + 5))
+					faces.push(new THREE.Face3(s + 1, s + 4, s + 3))
+					faces.push(new THREE.Face3(s + 2, s + 5, s + 4))
+					faces.push(new THREE.Face3(s, s + 3, s + 5))
+
 	if directions[0]
 		for k in k_lst
 			do (k) ->
@@ -104,15 +132,21 @@ root.gen_lines = (data, scale_coeff, lst,
 				for j in j_lst
 					do (j) ->
 
-						pnts = []
-						for i in i_seg
-							do (i) ->
-								pnts.push(data[k][j][i][0], 
-									data[k][j][i][1], data[k][j][i][2])
+						if last_border_line(0, k, j, 0)
+							pnts = []
+							faces = []
+							border_points(0, k, j, i_seg, pnts, faces)
+							add_border_line(pnts, scale_coeff, faces, border_material, 100500)
+						else
+							pnts = []
+							for i in i_seg
+								do (i) ->
+									pnts.push(data[k][j][i][0], 
+										data[k][j][i][1], data[k][j][i][2])
 
-						m = calc_material(0, k, j, 0)
-						if m.length > 1 
-							add_line(pnts, scale_coeff, m[0], m[1])
+							m = calc_material(0, k, j, 0)
+							if m.length > 1 
+								add_line(pnts, scale_coeff, m[0], m[1])
 
 	if directions[1]
 		for k in k_lst
@@ -121,15 +155,21 @@ root.gen_lines = (data, scale_coeff, lst,
 				for i in i_lst
 					do (i) ->
 
-						pnts = []
-						for j in j_seg
-							do (j) ->
-								pnts.push(data[k][j][i][0], 
-									data[k][j][i][1], data[k][j][i][2])
+						if last_border_line(1, k, 0, i)	
+							pnts = []
+							faces = []
+							border_points(1, k, i, j_seg, pnts, faces)
+							add_border_line(pnts, scale_coeff, faces, border_material, 100500)
+						else
+							pnts = []
+							for j in j_seg
+								do (j) ->
+									pnts.push(data[k][j][i][0], 
+										data[k][j][i][1], data[k][j][i][2])
 
-						m = calc_material(1, k, 0, i)
-						if m.length > 1 
-							add_line(pnts, scale_coeff, m[0], m[1])
+							m = calc_material(1, k, 0, i)
+							if m.length > 1 
+								add_line(pnts, scale_coeff, m[0], m[1])
 
 	if directions[2]
 		for j in j_lst
@@ -138,15 +178,21 @@ root.gen_lines = (data, scale_coeff, lst,
 				for i in i_lst
 					do (i) ->
 
-						pnts = []
-						for k in k_seg
-							do (k) ->
-								pnts.push(data[k][j][i][0], 
-									data[k][j][i][1], data[k][j][i][2])
+						if last_border_line(2, 0, j, i)
+							pnts = []
+							faces = []
+							border_points(2, j, i, k_seg, pnts, faces)
+							add_border_line(pnts, scale_coeff, faces, border_material, 100500)
+						else
+							pnts = []
+							for k in k_seg
+								do (k) ->
+									pnts.push(data[k][j][i][0], 
+										data[k][j][i][1], data[k][j][i][2])
 
-						m = calc_material(2, 0, j, i)
-						if m.length > 1 
-							add_line(pnts, scale_coeff, m[0], m[1])
+							m = calc_material(2, 0, j, i)
+							if m.length > 1 
+								add_line(pnts, scale_coeff, m[0], m[1])
 
 root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 	filter=[], filter_directions=[], filter_materials=[]) ->
@@ -568,6 +614,21 @@ root.add_line = (pnts, scale_coeff, material, name) ->
 	sceneObject.scale.z = scale_coeff
 
 	root.lines.add( sceneObject )
+
+root.add_border_line = (vertices, scale_coeff, faces, material, name) ->
+	
+	geometry = new THREE.Geometry()
+
+	geometry.vertices = vertices
+	geometry.faces = faces
+
+	geometry.computeBoundingSphere()
+
+	sceneObject = new THREE.Mesh(geometry, material)
+
+	sceneObject.name = name
+
+	root.lines.add( sceneObject )
 	
 root.add_surface = (vertices, scale_coeff, faces, material, name) ->
 	
@@ -735,7 +796,7 @@ root.GridFaces =
 		root.faces
 
 root.GridPoints = 
-	init: (data, scale_coeff, variable, min, max, index, color, radius) ->
+	init: (data, scale_coeff, variable, min, max, index, color, radius, options, types) ->
 
 		geometry = new THREE.BufferGeometry()
 
@@ -752,6 +813,46 @@ root.GridPoints =
 		v0 = min[variable]
 		v1 = max[variable]
 
+		if types.length > variable - 3 and !!types[variable - 3]
+			h = types[variable - 3]
+			keys = Object.keys(h)
+			for key, key_index in keys
+				do (key) ->
+					h[key] = paletter[key_index]
+			
+			calc_color = (value) ->
+				c = h[value]
+				r = c >> 16
+				g = (c & 0x00ff00) >> 8
+				b = c & 0x0000ff
+				[r, g, b]
+		else
+			calc_color = (value) ->
+				coeff = (value - v0) / (v1 - v0)
+
+				coeff_int = Math.floor(coeff * (paletter.length - 1))
+									
+				r0 = paletter[coeff_int] >> 16
+				g0 = (paletter[coeff_int] & 0x00ff00) >> 8
+				b0 = paletter[coeff_int] & 0x0000ff
+
+				if coeff_int == paletter.length - 1
+					r = r0
+					g = g0
+					b = b0
+				else
+					r1 = paletter[coeff_int + 1] >> 16
+					g1 = (paletter[coeff_int + 1] & 0x00ff00) >> 8
+					b1 = paletter[coeff_int + 1] & 0x0000ff
+
+					coeff_0 = coeff * (paletter.length - 1) - coeff_int
+
+					r = (r1 - r0) * coeff_0 + r0
+					g = (g1 - g0) * coeff_0 + g0
+					b = (b1 - b0) * coeff_0 + b0
+
+				[r, g, b]
+
 		positions = []
 		colors = []
 
@@ -761,55 +862,29 @@ root.GridPoints =
 					do (j) ->
 						for i, i_index in j
 							do (i) ->
-								positions.push(i[0], i[1], i[2])
-								
-								value = i[variable]
 
-								coeff = (value - v0) / (v1 - v0)
+								if options[0] or k_index == 0 or k_index == data.length - 1 or
+								j_index == 0 or j_index == k.length - 1 or 
+								i_index == 0 or i_index == j.length - 1
 
-								coeff_int = Math.floor(coeff * (paletter.length - 1))
-								
-								r0 = paletter[coeff_int] >> 16
-								g0 = (paletter[coeff_int] & 0x00ff00) >> 8
-								b0 = paletter[coeff_int] & 0x0000ff
+									positions.push(i[0], i[1], i[2])
 
-								if coeff_int == paletter.length - 1
-									r = r0
-									g = g0
-									b = b0
-								else
-									r1 = paletter[coeff_int + 1] >> 16
-									g1 = (paletter[coeff_int + 1] & 0x00ff00) >> 8
-									b1 = paletter[coeff_int + 1] & 0x0000ff
+									[r, g, b] = calc_color(i[variable])
 
-									coeff_0 = coeff * (paletter.length - 1) - coeff_int
+									colors.push(r / 255, g / 255, b / 255)
 
-									r = (r1 - r0) * coeff_0 + r0
-									g = (g1 - g0) * coeff_0 + g0
-									b = (b1 - b0) * coeff_0 + b0
-
-								colors.push(r / 255, g / 255, b / 255)
-
-								if k_index == 0 || k_index == data.length - 1 ||
-								j_index == 0 || j_index == k.length - 1 ||
-								i_index == 0 || i_index = j.index - 1
-									
-									boxgeometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
-
-									boxmaterial = new THREE.MeshBasicMaterial( 
+									sprite_material = new THREE.SpriteMaterial( 
 										{ color: ((r << 16) + (g << 8) +  b) } )
-
-									sceneObject = new THREE.Mesh( boxgeometry, boxmaterial )
-
-									sceneObject.position.x = i[0] * scale_coeff
-									sceneObject.position.y = i[1] * scale_coeff
-									sceneObject.position.z = i[2] * scale_coeff
-
-									sceneObject.scale.x = 5 * radius
-									sceneObject.scale.y = 5 * radius
-									sceneObject.scale.z = 5 * radius
-
-									root.cubes.add( sceneObject )
+									
+									sprite = new THREE.Sprite( sprite_material )
+									
+									sprite.position.x = i[0] * scale_coeff
+									sprite.position.y = i[1] * scale_coeff
+									sprite.position.z = i[2] * scale_coeff
+									
+									sprite.scale.set( radius * 0.7, radius * 0.7, 1 )
+									
+									root.cubes.add( sprite )
 
 		geometry.addAttribute('position', 
 			new THREE.BufferAttribute( new Float32Array(positions), 3 ) );
@@ -817,7 +892,7 @@ root.GridPoints =
 		geometry.addAttribute('color', 
 			new THREE.BufferAttribute( new Float32Array(colors), 3 ) );
 
-		material = new THREE.PointCloudMaterial({vertexColors: THREE.VertexColors, size: radius, sizeAttenuation: true})
+		material = new THREE.PointCloudMaterial({vertexColors: THREE.VertexColors, size: radius * 2, sizeAttenuation: true})
 
 		root.points = new THREE.PointCloud( geometry, material )
 

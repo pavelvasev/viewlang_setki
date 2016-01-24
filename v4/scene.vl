@@ -55,6 +55,8 @@ Scene
 			la_require( 
 				$basePath + "js/grid.js", 
 				function() { script_grid_flag = true; });
+
+		renderer.setClearColor( 0xd8dde2, 1 );
 	}
 
 	FileParam
@@ -68,6 +70,11 @@ Scene
 	{
 		id: loader
 		file: inputFile.file
+
+		onFileChanged: {
+			data_counter = 0;
+			data_controls = {};
+		}
 	}
 
 	Axis { }
@@ -133,7 +140,11 @@ Scene
 		property var point_size: 0.25
 		property var point_ind: []
 
+		property var points_options: [false]
+
 		property var cubes: []
+
+		property var counter: 0
 
 		onState_l_materialsChanged: {		
 
@@ -263,8 +274,6 @@ Scene
 					grid.style_default = value;
 				});	
 
-				f_filter = gui.addFolder('Filter');
-
 				fs_controls["lines i"] = true;
 				fs_controls["lines j"] = true;
 				fs_controls["lines k"] = true;
@@ -287,6 +296,8 @@ Scene
 				fs_controls["Default Style"] = true;
 
 				f_points = gui.addFolder('Points');
+
+				f_filter = gui.addFolder('Filter');
 				
 				var f_export = gui.addFolder('Export');
 
@@ -575,8 +586,7 @@ Scene
 					}
 				});
 
-				c = grid.f_filter.add(grid.fs_controls, 
-					"Default Style");
+				c = grid.f_filter.add(grid.fs_controls, "Default Style");
 
 				if ( !grid.style_filter_default )
 					grid.add_fstyle_folders();
@@ -605,7 +615,7 @@ Scene
 			
 			function add_controls()
 			{
-				if (block.z == 0 && grid.id_controls.length > 0) {
+				if (data_counter == 0 && grid.id_controls.length > 0) {
 
 					while(grid.id_controls.length > 0)
 					{
@@ -621,19 +631,20 @@ Scene
 
 					grid.f_filter.removeFolder("Lines Style");
 					grid.f_filter.removeFolder("Faces Style");
+
+					data_controls = {};
+
+					block.option_visible = true;
 				}
 
 				var name = "#" + (block.z + 1).toString() + " visible";
 
 				grid.controls[ name ] = true;
-				
-				var c = grid.f_visible.add(grid.controls, name);
-				
-				c.onFinishChange(function(value){ 
-						block.option_visible = value;
-					});
 
-				grid.id_controls.push([grid.f_visible, c]);
+				data_controls[block.z] = [[name, 
+					function(value){ 
+						block.option_visible = value;
+					}]];
 
 				var d = [
 					loader.grid[ block.z ].length, 
@@ -655,26 +666,41 @@ Scene
 
 				block.option_detail = d;
 
-				var c = grid.f_detail.add(grid.d_controls, name).listen();
-
-				grid.id_controls.push([grid.f_detail, c]);
-				
-				c.onFinishChange(function(value)
-				{ 
-					var numb = value.match(/\d+/g);
+				data_controls[block.z][1] = [name, 
+					function(value){ 
+						var numb = value.match(/\d+/g);
 						
-					if(!!numb && numb.length >= 3) {
-						block.option_detail = [ 
-							parseInt(numb[2]), 
-							parseInt(numb[1]), 
-							parseInt(numb[0]) ];
-					} else {
-						block.option_detail = [1, 1, 1];
-						value =	'di = 1, dj = 1, dk = 1';
-					}
-				});
+						if(!!numb && numb.length >= 3) {
+							block.option_detail = [ 
+								parseInt(numb[2]), 
+								parseInt(numb[1]), 
+								parseInt(numb[0]) ];
+						} else {
+							block.option_detail = [1, 1, 1];
+							value =	'di = 1, dj = 1, dk = 1';
+						}
+					}];
+				
+				if (data_counter == loader.grid.length - 1) {
 
-				if (block.z == loader.grid.length - 1) {
+					var keys = Object.keys(data_controls);
+
+					for (var i = 0; i < keys.length; i++)
+					{
+						var item, c;
+						
+						item = data_controls[i][0];
+						c = grid.f_visible.add(grid.controls, item[0]);
+						c.onFinishChange(item[1]);
+						grid.id_controls.push([grid.f_visible, c]);
+
+						item = data_controls[i][1];
+						c = grid.f_detail.add(grid.d_controls, item[0]).listen();
+						c.onFinishChange(item[1]);
+						grid.id_controls.push([grid.f_detail, c]);
+					}
+
+					data_controls = {};
 					
 					grid.controls["all points"] = function() {
 						for ( var i = 0; i < grid['$items'].length; i++ )
@@ -688,7 +714,67 @@ Scene
 
 					grid.id_controls.push([grid.f_detail, c]);
 
+					// points
+
+					grid.point = [];
+					grid.points_variable = "";
+
+					if (loader.grid[0][0][0][0].length > 3) {
+
+						grid.controls["variable"] = "";
+
+						var lst = [""];
+
+						for ( var i = 1; i <= loader.grid[0][0][0][0].length - 3; i++ ) 
+							lst.push(i.toString());
+
+						var c = grid.f_points.add(grid.controls, "variable", lst).listen();
+
+						grid.id_controls.push([grid.f_points, c]);
+
+						c.onFinishChange(function(value)
+						{
+							grid.points_variable = value;
+						});
+
+						grid.controls["point size"] = 0.25;
+
+						var c = grid.f_points.add(grid.controls, "point size", 0, 0.5).step(0.05)
+						
+						grid.id_controls.push([grid.f_points, c]);
+
+						c.onFinishChange(function(value)
+						{
+							grid.points_size = value;
+							if ( grid.points_variable == "" && value != 0 && 
+								loader.grid[0][0][0][0].length > 3)
+							{
+								grid.controls["variable"] = "1";
+								grid.points_variable = "1";
+							}
+						});
+
+						grid.controls["internal"] = false;
+
+						var c = grid.f_points.add(grid.controls, "internal").listen();
+
+						grid.id_controls.push([grid.f_points, c]);
+
+						c.onFinishChange(function(value)
+						{
+							grid.points_options = [value];
+						});	
+					}
+
 					// filter
+
+					grid.filter_block = -1
+					grid.filter_controls_changed = 0
+
+					grid.s_controls["internal"] = true;
+					
+					grid.s_controls["Default Style"] = true;
+					grid.style_default = true;
 
 					grid.controls["Block"] = "";
 
@@ -752,42 +838,6 @@ Scene
 							}
 						} 
 					});
-
-					if (loader.grid[0][0][0][0].length > 3) {
-
-						grid.controls["variable"] = "";
-
-						var lst = [""];
-
-						for ( var i = 1; i <= loader.grid[0][0][0][0].length - 3; i++ ) 
-							lst.push(i.toString());
-
-						var c = grid.f_points.add(grid.controls, "variable", lst).listen();
-
-						grid.id_controls.push([grid.f_points, c]);
-
-						c.onFinishChange(function(value)
-						{
-							grid.points_variable = value;
-						});
-
-						grid.controls["point size"] = 0.25;
-
-						var c = grid.f_points.add(grid.controls, "point size", 0, 0.5).step(0.05)
-						
-						grid.id_controls.push([grid.f_points, c]);
-
-						c.onFinishChange(function(value)
-						{
-							grid.points_size = value;
-							if ( grid.points_variable == "" && value != 0 && 
-								loader.grid[0][0][0][0].length > 3)
-							{
-								grid.controls["variable"] = "1";
-								grid.points_variable = "1";
-							}
-						});
-					}
 
 					function keypress_event(e) 
 					{
@@ -883,6 +933,8 @@ Scene
 					
 					window.addEventListener( "keypress", keypress_event, false );
 				}
+
+				data_counter ++;
 			}
 
 			GridLines
@@ -947,6 +999,8 @@ Scene
 				index: block.z
 				colors: legend.colors
 				radius: grid.points_size
+				options: grid.points_options
+				types: loader.types
 			}
 		}
 	}
@@ -974,7 +1028,6 @@ Scene
 						min_ind = gridpoints.index;
 					}
 				}
-
 			};
 
 			if (!!min_r)
@@ -985,9 +1038,39 @@ Scene
 				nj = loader.grid[ min_ind ][0].length;
 				nk = loader.grid[ min_ind ].length;
 
-				k = Math.floor(min_r.index / (ni * nj));
-				j = Math.floor((min_r.index - k * ni * nj) / ni);
-				i = min_r.index - k * ni * nj - j * ni;
+				if (grid.points_options[0])
+				{
+					k = Math.floor(min_r.index / (ni * nj));
+					j = Math.floor((min_r.index - k * ni * nj) / ni);
+					i = min_r.index - k * ni * nj - j * ni;
+				} else {
+					var ind = -1;
+					var f = false;
+
+					for (var kt = 0; kt < nk; kt++)
+					{	
+						for (var jt = 0; jt < nj; jt++)
+						{
+							for (var it = 0; it < ni; it++)
+							{
+								if (kt == 0 || kt == nk - 1 ||
+									jt == 0 || jt == nj - 1 ||
+									it == 0 || it == ni - 1) 
+									ind ++;
+
+								if (ind == min_r.index)
+								{
+									k = kt; j = jt; i = it; 
+									f = true;
+								}
+
+								if (f) break;
+							}
+							if (f) break;
+						}
+						if (f) break;
+					}
+				}
 
 				tmp = loader.grid[ min_ind ][k][j][i];
 
@@ -1017,6 +1100,7 @@ Scene
 		max: loader.max
 		colors: legend.colors
 		radius: grid.point_size
+		types: loader.types
 	}
 
 	Column
@@ -1032,30 +1116,33 @@ Scene
 			
 			function msg()
 			{
-				var m = "Selected: \n";
+				var m = '<span style="' + 
+				'font-size: 120%; color: white; background-color: rgba(0, 0, 0, 0.7);">' + 
+				"&nbsp;Selected: ";
 
-				m += "block: " + (grid.point_ind[0] + 1).toString() + "; "; 
+				m += "block: " + (grid.point_ind[0] + 1).toString() + ";&nbsp;\n"; 
 
 				if(grid.point_ind.length > 2)
 				{
-					m += "i: " + (grid.point_ind[3] + 1).toString() + "; j: " +
+					m += "&nbsp;i: " + (grid.point_ind[3] + 1).toString() + "; j: " +
 						(grid.point_ind[2] + 1).toString() + "; k: " + 
-						(grid.point_ind[1] + 1).toString() + ";\n\n";
+						(grid.point_ind[1] + 1).toString() + ";&nbsp;\n\n";
 				}
 
 				if(grid.point.length > 2)
 				{
-					m += "x = " + grid.point[0] + ";\ny = " +
-						 grid.point[1] + ";\nz = " + grid.point[2] + ";\n\n";
+					m += "&nbsp;x = " + grid.point[0] + ";&nbsp;\n&nbsp;y = " +
+						 grid.point[1] + ";&nbsp;\n&nbsp;z = " + grid.point[2] + ";&nbsp;\n\n";
 				}
 
 				for(var i = 3; i < grid.point.length; i++)
 				{
-					m += (parseInt(grid.points_variable) + 2 != i)? grid.point[i] + ";\n": 
-						"[" + grid.point[i] + "];\n";
+					m += (parseInt(grid.points_variable) + 2 != i)? 
+						"&nbsp;" + grid.point[i] + ";&nbsp;\n": 
+						"&nbsp;[&nbsp;" + grid.point[i] + "&nbsp;];&nbsp;\n";
 				}
 
-				return m + "\n";
+				return m + "</span>" + "\n";
 			}
 		}
 
@@ -1079,8 +1166,32 @@ Scene
 					width: 180
 
 					property var htmlNode
-					property var colors:
-						["#0022ff", "#00ddff", "#66ff33", "#ffff00", "#ffbb00", "#ff2200"];
+					property var colors: get_colors(loader.types, grid.points_variable);
+
+					function get_colors(types, variable)
+					{
+						if (types.length > 0 && variable!= "" && 
+							!!types[parseInt(variable) - 1]) 
+						{
+							var values = Object.keys(types[parseInt(variable) - 1]);
+							var step = 1 / (values.length + 1);
+
+							var cols = [];
+							var color = step % 1;	
+
+							for (var i = 0; i < values.length; i++)
+							{
+								color = (color + step + 0.5) % 1;
+
+								cols.push("#" + new THREE.Color()
+									.setHSL(color, 0.98, 0.56).getHex().toString(16));
+							}
+
+							return cols;
+						}
+
+						return ["#0022ff", "#00ddff", "#66ff33", "#ffff00", "#ffbb00", "#ff2200"];
+					}	
 					
 					property var scalar: (grid.points_variable == "" || 
 						parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length)? 
@@ -1103,19 +1214,6 @@ Scene
 								range[1].toString() + "</div>" + 
 							"</div>";
 
-						var canvas = legend.dom.firstChild.firstChild;
-						var ctx = canvas.getContext("2d");
-						ctx.rect(0, 0, canvas.width, canvas.height);
-						var gradient = ctx.createLinearGradient(0, 0, width, 0);
-
-						for(var i = 0; i < colors.length; i++)
-						{
-							gradient.addColorStop(i / (colors.length - 1), colors[i]);			
-						}
-
-						ctx.fillStyle = gradient;
-						ctx.fillRect(0, 0, width, height);
-
 						htmlNode = legend.dom.firstChild;
 						htmlNode.style.display = "none";
 					}
@@ -1133,7 +1231,41 @@ Scene
 					onScalarChanged:
 					{
 						if(!!htmlNode)
+						{
 							htmlNode.style.display = (scalar == "")? "none": "block";
+
+							if (scalar != "" && loader.types.length > 0 && 
+							!!loader.types[parseInt(scalar) - 1])
+							{
+								var canvas = htmlNode.childNodes[0];
+								var ctx = canvas.getContext("2d");
+								ctx.rect(0, 0, canvas.width, canvas.height);
+								var gradient = ctx.createLinearGradient(0, 0, width, 0);
+
+								for(var i = 0; i < colors.length; i++)
+								{
+									gradient.addColorStop(i / colors.length, colors[i]);
+									gradient.addColorStop((i + 1) / colors.length, colors[i]);
+								}
+
+								ctx.fillStyle = gradient;
+								ctx.fillRect(0, 0, width, height);
+
+							} else if (scalar != "") {
+								var canvas = htmlNode.childNodes[0];
+								var ctx = canvas.getContext("2d");
+								ctx.rect(0, 0, canvas.width, canvas.height);
+								var gradient = ctx.createLinearGradient(0, 0, width, 0);
+
+								for(var i = 0; i < colors.length; i++)
+								{
+									gradient.addColorStop(i / (colors.length - 1), colors[i]);
+								}
+
+								ctx.fillStyle = gradient;
+								ctx.fillRect(0, 0, width, height);
+							}
+						}
 					}
 				}
 			}

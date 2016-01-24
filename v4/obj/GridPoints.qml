@@ -11,6 +11,8 @@ SceneObjectThreeJs
 	property var colors: ["#000000", "#ffffff"]
 	property var radius: 0.25
 	property var cubes
+	property var options: [true]
+	property var types: []
 
 	function make3d() {
 
@@ -22,7 +24,8 @@ SceneObjectThreeJs
 			parseInt(variable) + 3 <= data[0][0][0].length ) {
 
 			ref = GridPoints.init(
-					data, scale_coeff, variable, min, max, index, colors, radius
+					data, scale_coeff, variable, min, max, 
+					index, colors, radius, options, types
 				);
 
 			this.sceneObject = ref[0];
@@ -30,11 +33,15 @@ SceneObjectThreeJs
 
 			scene.add(this.sceneObject);
 
+			scene.updateMatrixWorld();
+
 			this.sceneObject.visible = visible;
 		}
 	}
 
 	onDataChanged: makeLater(this);
+
+	onOptionsChanged: makeLater(this);
 
 	onVisibleChanged: {
 		if (this.sceneObject) {
@@ -44,7 +51,7 @@ SceneObjectThreeJs
 
 	onRadiusChanged: {
 		if (!this.sceneObject || !this.sceneObject.material) return;
-		this.sceneObject.material.size = radius;
+		this.sceneObject.material.size = radius * 2;
 		this.sceneObject.material.needsUpdate = true;
 
 		if(cubes) {
@@ -52,9 +59,9 @@ SceneObjectThreeJs
 			for (var i = cubes.children.length - 1; i >= 0; i--) {
 				var obj = cubes.children[i];
 
-				obj.scale.x = 5 * radius;
-				obj.scale.y = 5 * radius;
-				obj.scale.z = 5 * radius;
+				obj.scale.x = radius * 0.7;
+				obj.scale.y = radius * 0.7;
+				obj.scale.z = radius * 0.7;
 			}
 		}
     }
