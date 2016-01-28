@@ -24,6 +24,8 @@ SceneObject
 	property var materials: []
 	property var filter_materials: []
 
+	property var filter_scalar: []
+
 	function make3d() {
 
 		if (!data) return; 
@@ -63,12 +65,13 @@ SceneObject
 					filter_materials[i] = tmp;
 			};
 
-			if (directions[0] || directions[1] || directions[2] || (filter.length > 0))
+			if (directions[0] || directions[1] || directions[2] || filter.length > 0 ||
+				filter_scalar.length > 0)
 			{
 				this.sceneObject = GridFaces.init(
 						data, scale_coeff, 
 						detail, directions, materials, 
-						filter, filter_directions, filter_materials
+						filter, filter_directions, filter_materials, filter_scalar
 					);
 
 				scene.add(this.sceneObject);
@@ -157,6 +160,7 @@ SceneObject
 	onDataChanged: makeLater(this);
 	onDetailChanged: makeLater(this);
 	onFilterChanged: makeLater(this);
+	onFilter_scalarChanged: makeLater(this);
 
 	onVisibleChanged: {
 		if (this.sceneObject) {

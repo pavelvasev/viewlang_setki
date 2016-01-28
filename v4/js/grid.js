@@ -5,50 +5,32 @@
 
   root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
-  root.gen_lines = function(data, scale_coeff, lst, directions, materials, filter) {
-    var border_color, border_line, border_material, border_points, borders, calc_material, coeff, fn, fn1, i_first, i_last, i_lst, i_seg, i_size, j, j_first, j_last, j_lst, j_seg, j_size, k, k_first, k_last, k_lst, k_seg, k_size, last_border_line, len, len1, len2, n, o, p, q, results, results1, results2, results3, t, u;
-    if (filter == null) {
-      filter = false;
-    }
+  root.gen_lines = function(data, scale_coeff, detail, directions, materials, filtered, filter_detail, filter_directions, filter_materials) {
+    var add_seg, border_color, border_line, border_material, border_points, borders, calc_material, coeff, filter_border_color, filter_border_line, filter_border_material, filter_borders, fn, fn1, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border_line, last_border_material, n, o, q, ref, ref1, ref2, ref3, ref4, results;
     if (directions.length < 4) {
       directions = [true, true, true, true];
     }
-    k_lst = lst[0];
-    j_lst = lst[1];
-    i_lst = lst[2];
-    k_first = k_lst[0];
-    j_first = j_lst[0];
-    i_first = i_lst[0];
-    k_last = k_lst[k_lst.length - 1];
-    j_last = j_lst[j_lst.length - 1];
-    i_last = i_lst[i_lst.length - 1];
-    k_seg = (function() {
-      results = [];
-      for (var n = k_first; k_first <= k_last ? n <= k_last : n >= k_last; k_first <= k_last ? n++ : n--){ results.push(n); }
-      return results;
-    }).apply(this);
-    j_seg = (function() {
-      results1 = [];
-      for (var o = j_first; j_first <= j_last ? o <= j_last : o >= j_last; j_first <= j_last ? o++ : o--){ results1.push(o); }
-      return results1;
-    }).apply(this);
-    i_seg = (function() {
-      results2 = [];
-      for (var p = i_first; i_first <= i_last ? p <= i_last : p >= i_last; i_first <= i_last ? p++ : p--){ results2.push(p); }
-      return results2;
-    }).apply(this);
-    k_size = k_last - k_first;
-    j_size = j_last - j_first;
-    i_size = i_last - i_first;
-    if (filter === true) {
-      borders = [[k_first, k_last], [j_first, j_last], [i_first, i_last]];
-      coeff = 5;
-      border_color = "#0000ff";
-    } else {
-      borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
-      coeff = 0;
-      border_color = "#000000";
+    if (filter_directions.length < 4) {
+      filter_directions = [true, true, true, true];
     }
+    borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
+    coeff = 0;
+    border_color = "#000000";
+    border_material = [
+      new THREE.LineBasicMaterial({
+        color: border_color,
+        linewidth: 1
+      }), coeff + 3
+    ];
+    filter_borders = [[filter_detail[0][0], filter_detail[0][filter_detail[0].length - 1]], [filter_detail[1][0], filter_detail[1][filter_detail[1].length - 1]], [filter_detail[2][0], filter_detail[2][filter_detail[2].length - 1]]];
+    coeff = 5;
+    filter_border_color = "#0000ff";
+    filter_border_material = [
+      new THREE.LineBasicMaterial({
+        color: filter_border_color,
+        linewidth: 1
+      }), coeff + 3
+    ];
     last_border_line = function(dir, k, j, i) {
       var r;
       if (dir === 0) {
@@ -71,61 +53,96 @@
       }
       return r;
     };
-    if (materials.length < 4) {
-      calc_material = function(dir, k, j, i) {
-        var color, i_coeff, j_coeff, k_coeff, m, mid;
-        if (border_line(dir, k, j, i)) {
-          m = [
-            new THREE.LineBasicMaterial({
-              color: border_color,
-              linewidth: 1
-            }), coeff + 3
-          ];
+    filter_border_line = function(dir, k, j, i) {
+      var r;
+      if (dir === 0) {
+        r = indexOf.call(filter_borders[0], k) >= 0 || indexOf.call(filter_borders[1], j) >= 0 ? true : false;
+      } else if (dir === 1) {
+        r = indexOf.call(filter_borders[0], k) >= 0 || indexOf.call(filter_borders[2], i) >= 0 ? true : false;
+      } else if (dir === 2) {
+        r = indexOf.call(filter_borders[1], j) >= 0 || indexOf.call(filter_borders[2], i) >= 0 ? true : false;
+      }
+      return r;
+    };
+    ref = [0, 0, 0], k_first = ref[0], j_first = ref[1], i_first = ref[2];
+    ref1 = [k_last, j_last, i_last], k_size = ref1[0], j_size = ref1[1], i_size = ref1[2];
+    calc_material = function(dir, k, j, i, filter) {
+      var color, i_coeff, j_coeff, k_coeff, m, mid;
+      if (filter == null) {
+        filter = false;
+      }
+      if (filter === true) {
+        coeff = 5;
+        if (filter_materials.length < 4) {
+          if (filter_border_line(dir, k, j, i)) {
+            m = filter_border_material;
+          } else {
+            mid = 0xff;
+            i_coeff = dir === 0 ? mid : (i - i_first) / i_size * 0xff;
+            j_coeff = dir === 1 ? mid : (j - j_first) / j_size * 0xff;
+            k_coeff = dir === 2 ? mid : (k - k_first) / k_size * 0xff;
+            color = (i_coeff << 16) + (k_coeff << 8) + j_coeff;
+            m = [
+              new THREE.LineBasicMaterial({
+                color: color,
+                linewidth: 1
+              }), dir + coeff
+            ];
+          }
         } else {
-          mid = filter === true ? 0xff : 0x55;
-          i_coeff = dir === 0 ? mid : (i - i_first) / i_size * 0xff;
-          j_coeff = dir === 1 ? mid : (j - j_first) / j_size * 0xff;
-          k_coeff = dir === 2 ? mid : (k - k_first) / k_size * 0xff;
-          color = (i_coeff << 16) + (k_coeff << 8) + j_coeff;
-          m = [
-            new THREE.LineBasicMaterial({
-              color: color,
-              linewidth: 1
-            }), dir + coeff
-          ];
+          if (filter_border_line(dir, k, j, i)) {
+            m = [filter_materials[3], coeff + 3];
+          } else {
+            m = filter_directions[3] ? [filter_materials[dir], dir + coeff] : [];
+          }
         }
-        return m;
-      };
-    } else {
-      calc_material = function(dir, k, j, i) {
-        var m;
-        if (last_border_line(dir, k, j, i)) {
-          m = [materials[4], coeff + 4];
-        } else if (border_line(dir, k, j, i)) {
-          m = [materials[3], coeff + 3];
+      } else {
+        coeff = 0;
+        if (materials.length < 4) {
+          if (border_line(dir, k, j, i)) {
+            m = border_material;
+          } else {
+            mid = 0x55;
+            i_coeff = dir === 0 ? mid : (i - i_first) / i_size * 0xff;
+            j_coeff = dir === 1 ? mid : (j - j_first) / j_size * 0xff;
+            k_coeff = dir === 2 ? mid : (k - k_first) / k_size * 0xff;
+            color = (i_coeff << 16) + (k_coeff << 8) + j_coeff;
+            m = [
+              new THREE.LineBasicMaterial({
+                color: color,
+                linewidth: 1
+              }), dir + coeff
+            ];
+          }
         } else {
-          m = directions[3] ? [materials[dir], dir + coeff] : [];
+          if (last_border_line(dir, k, j, i)) {
+            m = [materials[4], coeff + 4];
+          } else if (border_line(dir, k, j, i)) {
+            m = [materials[3], coeff + 3];
+          } else {
+            m = directions[3] ? [materials[dir], dir + coeff] : [];
+          }
         }
-        return m;
-      };
-    }
-    border_material = new THREE.MeshBasicMaterial({
+      }
+      return m;
+    };
+    last_border_material = new THREE.MeshBasicMaterial({
       color: 0x000000,
       side: THREE.DoubleSide
     });
     border_points = function(dir, a, b, x_seg, pnts, faces) {
-      var len, q, results3, x, x_ind;
-      results3 = [];
-      for (x_ind = q = 0, len = x_seg.length; q < len; x_ind = ++q) {
+      var len, n, results, x, x_ind;
+      results = [];
+      for (x_ind = n = 0, len = x_seg.length; n < len; x_ind = ++n) {
         x = x_seg[x_ind];
-        results3.push((function(x) {
-          var i, j, k, ref, ref1, ref2, s;
+        results.push((function(x) {
+          var i, j, k, ref2, ref3, ref4, s;
           if (dir === 0) {
-            ref = [a, b, x], k = ref[0], j = ref[1], i = ref[2];
+            ref2 = [a, b, x], k = ref2[0], j = ref2[1], i = ref2[2];
           } else if (dir === 1) {
-            ref1 = [a, x, b], k = ref1[0], j = ref1[1], i = ref1[2];
+            ref3 = [a, x, b], k = ref3[0], j = ref3[1], i = ref3[2];
           } else if (dir === 2) {
-            ref2 = [x, a, b], k = ref2[0], j = ref2[1], i = ref2[2];
+            ref4 = [x, a, b], k = ref4[0], j = ref4[1], i = ref4[2];
           }
           pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff + 0.05, data[k][j][i][1] * scale_coeff, data[k][j][i][2] * scale_coeff));
           pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff, data[k][j][i][1] * scale_coeff + 0.05, data[k][j][i][2] * scale_coeff));
@@ -141,121 +158,199 @@
           }
         })(x));
       }
-      return results3;
+      return results;
     };
-    if (directions[0]) {
-      fn = function(k) {
-        var j, len1, results3, t;
-        results3 = [];
-        for (t = 0, len1 = j_lst.length; t < len1; t++) {
-          j = j_lst[t];
-          results3.push((function(j) {
-            var faces, fn1, i, len2, m, pnts, u;
-            if (last_border_line(0, k, j, 0)) {
-              pnts = [];
-              faces = [];
-              border_points(0, k, j, i_seg, pnts, faces);
-              return add_border_line(pnts, scale_coeff, faces, border_material, 100500);
-            } else {
-              pnts = [];
-              fn1 = function(i) {
-                return pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
-              };
-              for (u = 0, len2 = i_seg.length; u < len2; u++) {
-                i = i_seg[u];
-                fn1(i);
-              }
-              m = calc_material(0, k, j, 0);
-              if (m.length > 1) {
-                return add_line(pnts, scale_coeff, m[0], m[1]);
-              }
-            }
-          })(j));
-        }
-        return results3;
-      };
-      for (q = 0, len = k_lst.length; q < len; q++) {
-        k = k_lst[q];
-        fn(k);
+    add_seg = function(p, dir, k, j, i, filter) {
+      var m;
+      if (filter == null) {
+        filter = false;
       }
+      if (filter === true) {
+        if (filter_directions[dir] && p.length > 1) {
+          m = calc_material(dir, k, j, i, true);
+          if (m.length > 1) {
+            return add_line(p, scale_coeff, m[0], m[1]);
+          }
+        }
+      } else {
+        if (directions[dir] && p.length > 1) {
+          m = calc_material(dir, k, j, i);
+          if (m.length > 1) {
+            return add_line(p, scale_coeff, m[0], m[1]);
+          }
+        }
+      }
+    };
+    fn = function(k) {
+      var j, o, ref3, results;
+      results = [];
+      for (j = o = 0, ref3 = j_last; 0 <= ref3 ? o <= ref3 : o >= ref3; j = 0 <= ref3 ? ++o : --o) {
+        results.push((function(j) {
+          var faces, filter_pnts, flag, fn1, i, pnts, q, ref4, results1, t;
+          if (directions[0] && last_border_line(0, k, j, 0)) {
+            pnts = [];
+            faces = [];
+            border_points(0, k, j, (function() {
+              results1 = [];
+              for (var q = 0; 0 <= i_last ? q <= i_last : q >= i_last; 0 <= i_last ? q++ : q--){ results1.push(q); }
+              return results1;
+            }).apply(this), pnts, faces);
+            return add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+          } else {
+            pnts = [];
+            filter_pnts = [];
+            flag = -1;
+            fn1 = function(i) {
+              if (filtered(k, j, i)) {
+                if (flag === 1) {
+                  pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                  add_seg(pnts, 0, k, j, 0);
+                  pnts = [];
+                }
+                if (indexOf.call(filter_detail[0], k) >= 0 && indexOf.call(filter_detail[1], j) >= 0) {
+                  filter_pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                }
+                return flag = 0;
+              } else {
+                if (flag === 0) {
+                  add_seg(filter_pnts, 0, k, j, 0, true);
+                  filter_pnts = [];
+                  pnts.push(data[k][j][i - 1][0], data[k][j][i - 1][1], data[k][j][i - 1][2]);
+                }
+                if (indexOf.call(detail[0], k) >= 0 && indexOf.call(detail[1], j) >= 0) {
+                  pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                }
+                return flag = 1;
+              }
+            };
+            for (i = t = 0, ref4 = i_last; 0 <= ref4 ? t <= ref4 : t >= ref4; i = 0 <= ref4 ? ++t : --t) {
+              fn1(i);
+            }
+            add_seg(pnts, 0, k, j, 0);
+            return add_seg(filter_pnts, 0, k, j, 0, true);
+          }
+        })(j));
+      }
+      return results;
+    };
+    for (k = n = 0, ref2 = k_last; 0 <= ref2 ? n <= ref2 : n >= ref2; k = 0 <= ref2 ? ++n : --n) {
+      fn(k);
     }
-    if (directions[1]) {
-      fn1 = function(k) {
-        var i, len2, results3, u;
-        results3 = [];
-        for (u = 0, len2 = i_lst.length; u < len2; u++) {
-          i = i_lst[u];
-          results3.push((function(i) {
-            var faces, fn2, j, len3, m, pnts, v;
-            if (last_border_line(1, k, 0, i)) {
+    fn1 = function(k) {
+      var i, q, ref4, results;
+      results = [];
+      for (i = q = 0, ref4 = i_last; 0 <= ref4 ? q <= ref4 : q >= ref4; i = 0 <= ref4 ? ++q : --q) {
+        results.push((function(i) {
+          var faces, filter_pnts, flag, fn2, j, pnts, ref5, results1, t, u;
+          if (directions[1] && last_border_line(1, k, 0, i)) {
+            pnts = [];
+            faces = [];
+            border_points(1, k, i, (function() {
+              results1 = [];
+              for (var t = 0; 0 <= j_last ? t <= j_last : t >= j_last; 0 <= j_last ? t++ : t--){ results1.push(t); }
+              return results1;
+            }).apply(this), pnts, faces);
+            return add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+          } else {
+            pnts = [];
+            filter_pnts = [];
+            flag = -1;
+            fn2 = function(j) {
+              if (filtered(k, j, i)) {
+                if (flag === 1) {
+                  pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                  add_seg(pnts, 1, k, 0, i);
+                  pnts = [];
+                }
+                if (indexOf.call(filter_detail[0], k) >= 0 && indexOf.call(filter_detail[2], i) >= 0) {
+                  filter_pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                }
+                return flag = 0;
+              } else {
+                if (flag === 0) {
+                  add_seg(filter_pnts, 1, k, 0, i, true);
+                  filter_pnts = [];
+                  pnts.push(data[k][j - 1][i][0], data[k][j - 1][i][1], data[k][j - 1][i][2]);
+                }
+                if (indexOf.call(detail[0], k) >= 0 && indexOf.call(detail[2], i) >= 0) {
+                  pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                }
+                return flag = 1;
+              }
+            };
+            for (j = u = 0, ref5 = j_last; 0 <= ref5 ? u <= ref5 : u >= ref5; j = 0 <= ref5 ? ++u : --u) {
+              fn2(j);
+            }
+            add_seg(pnts, 1, k, 0, i);
+            return add_seg(filter_pnts, 1, k, 0, i, true);
+          }
+        })(i));
+      }
+      return results;
+    };
+    for (k = o = 0, ref3 = k_last; 0 <= ref3 ? o <= ref3 : o >= ref3; k = 0 <= ref3 ? ++o : --o) {
+      fn1(k);
+    }
+    results = [];
+    for (j = q = 0, ref4 = j_last; 0 <= ref4 ? q <= ref4 : q >= ref4; j = 0 <= ref4 ? ++q : --q) {
+      results.push((function(j) {
+        var i, ref5, results1, t;
+        results1 = [];
+        for (i = t = 0, ref5 = i_last; 0 <= ref5 ? t <= ref5 : t >= ref5; i = 0 <= ref5 ? ++t : --t) {
+          results1.push((function(i) {
+            var faces, filter_pnts, flag, fn2, pnts, ref6, results2, u, v;
+            if (directions[2] && last_border_line(2, 0, j, i)) {
               pnts = [];
               faces = [];
-              border_points(1, k, i, j_seg, pnts, faces);
-              return add_border_line(pnts, scale_coeff, faces, border_material, 100500);
+              border_points(2, j, i, (function() {
+                results2 = [];
+                for (var u = 0; 0 <= k_last ? u <= k_last : u >= k_last; 0 <= k_last ? u++ : u--){ results2.push(u); }
+                return results2;
+              }).apply(this), pnts, faces);
+              return add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
             } else {
               pnts = [];
-              fn2 = function(j) {
-                return pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+              filter_pnts = [];
+              flag = -1;
+              fn2 = function(k) {
+                if (filtered(k, j, i)) {
+                  if (flag === 1) {
+                    pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                    add_seg(pnts, 2, 0, j, i);
+                    pnts = [];
+                  }
+                  if (indexOf.call(filter_detail[1], j) >= 0 && indexOf.call(filter_detail[2], i) >= 0) {
+                    filter_pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                  }
+                  return flag = 0;
+                } else {
+                  if (flag === 0) {
+                    add_seg(filter_pnts, 2, 0, j, i, true);
+                    filter_pnts = [];
+                    pnts.push(data[k - 1][j][i][0], data[k - 1][j][i][1], data[k - 1][j][i][2]);
+                  }
+                  if (indexOf.call(detail[1], j) >= 0 && indexOf.call(detail[2], i) >= 0) {
+                    pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
+                  }
+                  return flag = 1;
+                }
               };
-              for (v = 0, len3 = j_seg.length; v < len3; v++) {
-                j = j_seg[v];
-                fn2(j);
+              for (k = v = 0, ref6 = k_last; 0 <= ref6 ? v <= ref6 : v >= ref6; k = 0 <= ref6 ? ++v : --v) {
+                fn2(k);
               }
-              m = calc_material(1, k, 0, i);
-              if (m.length > 1) {
-                return add_line(pnts, scale_coeff, m[0], m[1]);
-              }
+              add_seg(pnts, 2, 0, j, i);
+              return add_seg(filter_pnts, 2, 0, j, i, true);
             }
           })(i));
         }
-        return results3;
-      };
-      for (t = 0, len1 = k_lst.length; t < len1; t++) {
-        k = k_lst[t];
-        fn1(k);
-      }
+        return results1;
+      })(j));
     }
-    if (directions[2]) {
-      results3 = [];
-      for (u = 0, len2 = j_lst.length; u < len2; u++) {
-        j = j_lst[u];
-        results3.push((function(j) {
-          var i, len3, results4, v;
-          results4 = [];
-          for (v = 0, len3 = i_lst.length; v < len3; v++) {
-            i = i_lst[v];
-            results4.push((function(i) {
-              var faces, fn2, len4, m, pnts, w;
-              if (last_border_line(2, 0, j, i)) {
-                pnts = [];
-                faces = [];
-                border_points(2, j, i, k_seg, pnts, faces);
-                return add_border_line(pnts, scale_coeff, faces, border_material, 100500);
-              } else {
-                pnts = [];
-                fn2 = function(k) {
-                  return pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
-                };
-                for (w = 0, len4 = k_seg.length; w < len4; w++) {
-                  k = k_seg[w];
-                  fn2(k);
-                }
-                m = calc_material(2, 0, j, i);
-                if (m.length > 1) {
-                  return add_line(pnts, scale_coeff, m[0], m[1]);
-                }
-              }
-            })(i));
-          }
-          return results4;
-        })(j));
-      }
-      return results3;
-    }
+    return results;
   };
 
-  root.gen_surfaces = function(data, scale_coeff, det, dir, mat, filter, filter_directions, filter_materials) {
-    var compare, detail, directions, filter_internal, fn, fn1, get_segment, i, i_first, i_last, i_lst_back, i_lst_filter, i_lst_front, i_lst_main, i_part, i_size, internal_area, j_first, j_last, j_lst_back, j_lst_filter, j_lst_front, j_lst_main, j_part, j_size, k, k_first, k_index, k_last, k_lst_back, k_lst_filter, k_lst_front, k_lst_main, k_part, k_size, len, materials, merge, n, o, p, results, vec;
+  root.gen_surfaces = function(data, scale_coeff, det, dir, mat, filter, filter_directions, filter_materials, filter_scalar) {
+    var compare, detail, directions, filter_internal, fn, fn1, get_segment, i, i_first, i_last, i_lst_back, i_lst_filter, i_lst_front, i_lst_main, i_part, i_size, internal_area, j_first, j_last, j_lst_back, j_lst_filter, j_lst_front, j_lst_main, j_part, j_size, k, k_first, k_index, k_last, k_lst_back, k_lst_filter, k_lst_front, k_lst_main, k_part, k_size, len, materials, merge, n, o, q, results, vec;
     if (filter == null) {
       filter = [];
     }
@@ -264,6 +359,9 @@
     }
     if (filter_materials == null) {
       filter_materials = [];
+    }
+    if (filter_scalar == null) {
+      filter_scalar = [];
     }
     if (filter.length < 3 && filter_directions.length < 3) {
       filter_directions = [false, false, false];
@@ -426,8 +524,55 @@
       }
       return f1 && f2 && f3;
     };
+    if (filter_scalar.length) {
+      root.scalar = filter_scalar[0] + 2;
+      internal_area = function(dir, k, j, i) {
+        var ci_lst, cj_lst, ck, ck_lst, fn2, len, q, res;
+        res = false;
+        ck_lst = dir !== 1 && dir !== 2 && k > 0 ? [-1, 0] : [0];
+        cj_lst = dir !== 0 && dir !== 2 && j > 0 ? [-1, 0] : [0];
+        ci_lst = dir !== 0 && dir !== 1 && i > 0 ? [-1, 0] : [0];
+        if (k + 1 === data.length - 1) {
+          ck_lst.push(1);
+        }
+        if (j + 1 === data[0].length - 1) {
+          cj_lst.push(1);
+        }
+        if (i + 1 === data[0][0].length - 1) {
+          ci_lst.push(1);
+        }
+        fn2 = function(ck) {
+          var cj, len1, results, t;
+          results = [];
+          for (t = 0, len1 = cj_lst.length; t < len1; t++) {
+            cj = cj_lst[t];
+            results.push((function(cj) {
+              var ci, len2, results1, u;
+              results1 = [];
+              for (u = 0, len2 = ci_lst.length; u < len2; u++) {
+                ci = ci_lst[u];
+                results1.push((function(ci) {
+                  var value;
+                  value = data[k + ck][j + cj][i + ci][scalar];
+                  if (value >= filter_scalar[1][0] && value <= filter_scalar[1][1]) {
+                    return res = true;
+                  }
+                })(ci));
+              }
+              return results1;
+            })(cj));
+          }
+          return results;
+        };
+        for (q = 0, len = ck_lst.length; q < len; q++) {
+          ck = ck_lst[q];
+          fn2(ck);
+        }
+        return res;
+      };
+    }
     i_part = function(dir, i_index, k1, k2, j1, j2) {
-      var faces, faces_internal, fn2, fn3, get_face_0, get_face_1, j_index_size, k, k_index_size, p, q, ref, ref1, ref2, vertices;
+      var faces, faces_internal, fn2, fn3, get_face_0, get_face_1, j_index_size, k, k_index_size, q, ref, ref1, ref2, t, vertices;
       if (dir === 0) {
         get_face_0 = function(a, b) {
           return new THREE.Face3(b, a + 1, a);
@@ -450,38 +595,38 @@
       if (k1 !== k2 && j1 !== j2) {
         vertices = [];
         fn2 = function(k) {
-          var j, q, ref2, ref3, results;
+          var j, ref2, ref3, results, t;
           results = [];
-          for (j = q = ref2 = j1, ref3 = j2; ref2 <= ref3 ? q <= ref3 : q >= ref3; j = ref2 <= ref3 ? ++q : --q) {
+          for (j = t = ref2 = j1, ref3 = j2; ref2 <= ref3 ? t <= ref3 : t >= ref3; j = ref2 <= ref3 ? ++t : --t) {
             results.push((function(j) {
               return vertices.push(vec(k, j, i));
             })(j));
           }
           return results;
         };
-        for (k = p = ref = k1, ref1 = k2; ref <= ref1 ? p <= ref1 : p >= ref1; k = ref <= ref1 ? ++p : --p) {
+        for (k = q = ref = k1, ref1 = k2; ref <= ref1 ? q <= ref1 : q >= ref1; k = ref <= ref1 ? ++q : --q) {
           fn2(k);
         }
         faces = [];
         faces_internal = [];
         fn3 = function(k) {
-          var j, ref3, results, t;
+          var j, ref3, results, u;
           results = [];
-          for (j = t = 0, ref3 = j_index_size - 1; 0 <= ref3 ? t <= ref3 : t >= ref3; j = 0 <= ref3 ? ++t : --t) {
+          for (j = u = 0, ref3 = j_index_size - 1; 0 <= ref3 ? u <= ref3 : u >= ref3; j = 0 <= ref3 ? ++u : --u) {
             results.push((function(j) {
               var a, b, face_0, face_1, j0, k0;
               a = (j_index_size + 1) * k + j;
               b = (j_index_size + 1) * (k + 1) + j;
               face_0 = get_face_0(a, b);
               face_1 = get_face_1(a, b);
-              if (filter_internal && i >= filter[2][0] && i <= filter[2][1]) {
+              if ((filter_internal && i >= filter[2][0] && i <= filter[2][1]) || filter_scalar.length) {
                 k0 = k + k1;
                 j0 = j + j1;
                 if (internal_area(2, k0, j0, i)) {
-                  if (indexOf.call(i_lst_filter, i) >= 0) {
+                  if (filter_scalar.length || (indexOf.call(i_lst_filter, i) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (indexOf.call(i_lst_main, i) >= 0) {
+                } else if (filter_scalar.length || (indexOf.call(i_lst_main, i) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -491,19 +636,19 @@
           }
           return results;
         };
-        for (k = q = 0, ref2 = k_index_size - 1; 0 <= ref2 ? q <= ref2 : q >= ref2; k = 0 <= ref2 ? ++q : --q) {
+        for (k = t = 0, ref2 = k_index_size - 1; 0 <= ref2 ? t <= ref2 : t >= ref2; k = 0 <= ref2 ? ++t : --t) {
           fn3(k);
         }
         if (faces.length > 0 && directions[2]) {
           add_surface(vertices, scale_coeff, faces, materials[2], 2);
         }
-        if (filter_internal && faces_internal.length > 0 && filter_directions[2]) {
+        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[2]) {
           return add_surface(vertices, scale_coeff, faces_internal, filter_materials[2], 5);
         }
       }
     };
     j_part = function(dir, j_index, k1, k2) {
-      var aa, ab, faces, faces_internal, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, get_face_0, get_face_1, i_index, j, j1, j2, k, k_index_size, len, len1, len2, len3, len4, len5, len6, len7, p, q, ref, ref1, ref2, results, results1, t, u, v, vertices, w, y, z;
+      var aa, ab, ac, faces, faces_internal, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, get_face_0, get_face_1, i_index, j, j1, j2, k, k_index_size, len, len1, len2, len3, len4, len5, len6, len7, q, ref, ref1, ref2, results, results1, t, u, v, vertices, w, y, z;
       if (dir !== 0) {
         if (j_index > 0) {
           j1 = j_lst_front[j_index - 1];
@@ -514,7 +659,7 @@
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = p = 0, len = i_lst_front.length; p < len; i_index = ++p) {
+            for (i_index = q = 0, len = i_lst_front.length; q < len; i_index = ++q) {
               i = i_lst_front[i_index];
               fn2(i);
             }
@@ -523,7 +668,7 @@
                 return i_part(0, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = q = 0, len1 = i_lst_back.length; q < len1; i_index = ++q) {
+            for (i_index = t = 0, len1 = i_lst_back.length; t < len1; i_index = ++t) {
               i = i_lst_back[i_index];
               fn3(i);
             }
@@ -533,7 +678,7 @@
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = t = 0, len2 = i_lst_front.length; t < len2; i_index = ++t) {
+            for (i_index = u = 0, len2 = i_lst_front.length; u < len2; i_index = ++u) {
               i = i_lst_front[i_index];
               fn4(i);
             }
@@ -542,7 +687,7 @@
                 return i_part(0, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = u = 0, len3 = i_lst_back.length; u < len3; i_index = ++u) {
+            for (i_index = v = 0, len3 = i_lst_back.length; v < len3; i_index = ++v) {
               i = i_lst_back[i_index];
               fn5(i);
             }
@@ -569,37 +714,37 @@
       if (k1 !== k2 && i_first !== i_last) {
         vertices = [];
         fn6 = function(k) {
-          var ref2, ref3, results, w;
+          var ref2, ref3, results, y;
           results = [];
-          for (i = w = ref2 = i_first, ref3 = i_last; ref2 <= ref3 ? w <= ref3 : w >= ref3; i = ref2 <= ref3 ? ++w : --w) {
+          for (i = y = ref2 = i_first, ref3 = i_last; ref2 <= ref3 ? y <= ref3 : y >= ref3; i = ref2 <= ref3 ? ++y : --y) {
             results.push((function(i) {
               return vertices.push(vec(k, j, i));
             })(i));
           }
           return results;
         };
-        for (k = v = ref = k1, ref1 = k2; ref <= ref1 ? v <= ref1 : v >= ref1; k = ref <= ref1 ? ++v : --v) {
+        for (k = w = ref = k1, ref1 = k2; ref <= ref1 ? w <= ref1 : w >= ref1; k = ref <= ref1 ? ++w : --w) {
           fn6(k);
         }
         faces = [];
         faces_internal = [];
         fn7 = function(k) {
-          var ref3, results, y;
+          var ref3, results, z;
           results = [];
-          for (i = y = 0, ref3 = i_size - 1; 0 <= ref3 ? y <= ref3 : y >= ref3; i = 0 <= ref3 ? ++y : --y) {
+          for (i = z = 0, ref3 = i_size - 1; 0 <= ref3 ? z <= ref3 : z >= ref3; i = 0 <= ref3 ? ++z : --z) {
             results.push((function(i) {
               var a, b, face_0, face_1, k0;
               a = (i_size + 1) * k + i;
               b = (i_size + 1) * (k + 1) + i;
               face_0 = get_face_0(a, b);
               face_1 = get_face_1(a, b);
-              if (filter_internal && j >= filter[1][0] && j <= filter[1][1]) {
+              if (filter_internal && j >= filter[1][0] && j <= filter[1][1] || filter_scalar.length) {
                 k0 = k + k1;
                 if (internal_area(1, k0, j, i)) {
-                  if (indexOf.call(j_lst_filter, j) >= 0) {
+                  if (filter_scalar.length || (indexOf.call(j_lst_filter, j) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (indexOf.call(j_lst_main, j) >= 0) {
+                } else if (filter_scalar.length || (indexOf.call(j_lst_main, j) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -609,13 +754,13 @@
           }
           return results;
         };
-        for (k = w = 0, ref2 = k_index_size - 1; 0 <= ref2 ? w <= ref2 : w >= ref2; k = 0 <= ref2 ? ++w : --w) {
+        for (k = y = 0, ref2 = k_index_size - 1; 0 <= ref2 ? y <= ref2 : y >= ref2; k = 0 <= ref2 ? ++y : --y) {
           fn7(k);
         }
         if (faces.length > 0 && directions[1]) {
           add_surface(vertices, scale_coeff, faces, materials[1], 1);
         }
-        if (filter_internal && faces_internal.length > 0 && filter_directions[1]) {
+        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[1]) {
           add_surface(vertices, scale_coeff, faces_internal, filter_materials[1], 4);
         }
       }
@@ -629,12 +774,12 @@
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = y = 0, len4 = i_lst_front.length; y < len4; i_index = ++y) {
+            for (i_index = z = 0, len4 = i_lst_front.length; z < len4; i_index = ++z) {
               i = i_lst_front[i_index];
               fn8(i);
             }
             results = [];
-            for (i_index = z = 0, len5 = i_lst_back.length; z < len5; i_index = ++z) {
+            for (i_index = aa = 0, len5 = i_lst_back.length; aa < len5; i_index = ++aa) {
               i = i_lst_back[i_index];
               results.push((function(i) {
                 if (i_index <= i_lst_front.length / 2) {
@@ -649,12 +794,12 @@
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = aa = 0, len6 = i_lst_front.length; aa < len6; i_index = ++aa) {
+            for (i_index = ab = 0, len6 = i_lst_front.length; ab < len6; i_index = ++ab) {
               i = i_lst_front[i_index];
               fn9(i);
             }
             results1 = [];
-            for (i_index = ab = 0, len7 = i_lst_back.length; ab < len7; i_index = ++ab) {
+            for (i_index = ac = 0, len7 = i_lst_back.length; ac < len7; i_index = ++ac) {
               i = i_lst_back[i_index];
               results1.push((function(i) {
                 if (i_index > i_lst_front.length / 2) {
@@ -668,7 +813,7 @@
       }
     };
     k_part = function(dir, k_index) {
-      var faces, faces_internal, fn2, fn3, fn4, get_face_0, get_face_1, j, j_index, k, k1, k2, len, len1, p, q, ref, ref1, ref2, results, t, u, vertices;
+      var faces, faces_internal, fn2, fn3, fn4, get_face_0, get_face_1, j, j_index, k, k1, k2, len, len1, q, ref, ref1, ref2, results, t, u, v, vertices;
       if (dir !== 0 && k_index > 0) {
         k1 = k_lst_front[k_index - 1];
         k2 = k_lst_front[k_index];
@@ -677,7 +822,7 @@
             j_part(0, j_lst_front.length - 1 - j_index, k1, k2);
             return j_part(1, j_index, k1, k2);
           };
-          for (j_index = p = 0, len = j_lst_front.length; p < len; j_index = ++p) {
+          for (j_index = q = 0, len = j_lst_front.length; q < len; j_index = ++q) {
             j = j_lst_front[j_index];
             fn2(j);
           }
@@ -702,36 +847,36 @@
       if (j_first !== j_last && i_first !== i_last) {
         vertices = [];
         fn3 = function(j) {
-          var ref2, ref3, results, t;
+          var ref2, ref3, results, u;
           results = [];
-          for (i = t = ref2 = i_first, ref3 = i_last; ref2 <= ref3 ? t <= ref3 : t >= ref3; i = ref2 <= ref3 ? ++t : --t) {
+          for (i = u = ref2 = i_first, ref3 = i_last; ref2 <= ref3 ? u <= ref3 : u >= ref3; i = ref2 <= ref3 ? ++u : --u) {
             results.push((function(i) {
               return vertices.push(vec(k, j, i));
             })(i));
           }
           return results;
         };
-        for (j = q = ref = j_first, ref1 = j_last; ref <= ref1 ? q <= ref1 : q >= ref1; j = ref <= ref1 ? ++q : --q) {
+        for (j = t = ref = j_first, ref1 = j_last; ref <= ref1 ? t <= ref1 : t >= ref1; j = ref <= ref1 ? ++t : --t) {
           fn3(j);
         }
         faces = [];
         faces_internal = [];
         fn4 = function(j) {
-          var ref3, results, u;
+          var ref3, results, v;
           results = [];
-          for (i = u = 0, ref3 = i_size - 1; 0 <= ref3 ? u <= ref3 : u >= ref3; i = 0 <= ref3 ? ++u : --u) {
+          for (i = v = 0, ref3 = i_size - 1; 0 <= ref3 ? v <= ref3 : v >= ref3; i = 0 <= ref3 ? ++v : --v) {
             results.push((function(i) {
               var a, b, face_0, face_1;
               a = (i_size + 1) * j + i;
               b = (i_size + 1) * (j + 1) + i;
               face_0 = get_face_0(a, b);
               face_1 = get_face_1(a, b);
-              if (filter_internal && k >= filter[0][0] && k <= filter[0][1]) {
+              if (filter_internal && k >= filter[0][0] && k <= filter[0][1] || filter_scalar.length) {
                 if (internal_area(0, k, j, i)) {
-                  if (indexOf.call(k_lst_filter, k) >= 0) {
+                  if (filter_scalar.length || (indexOf.call(k_lst_filter, k) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (indexOf.call(k_lst_main, k) >= 0) {
+                } else if (filter_scalar.length || (indexOf.call(k_lst_main, k) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -741,13 +886,13 @@
           }
           return results;
         };
-        for (j = t = 0, ref2 = j_size - 1; 0 <= ref2 ? t <= ref2 : t >= ref2; j = 0 <= ref2 ? ++t : --t) {
+        for (j = u = 0, ref2 = j_size - 1; 0 <= ref2 ? u <= ref2 : u >= ref2; j = 0 <= ref2 ? ++u : --u) {
           fn4(j);
         }
         if (faces.length > 0 && directions[0]) {
           add_surface(vertices, scale_coeff, faces, materials[0], 0);
         }
-        if (filter_internal && faces_internal.length > 0 && filter_directions[0]) {
+        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[0]) {
           add_surface(vertices, scale_coeff, faces_internal, filter_materials[0], 3);
         }
       }
@@ -756,7 +901,7 @@
         k2 = k_lst_front[k_index];
         if (k_index < k_lst_front.length / 2) {
           results = [];
-          for (j_index = u = 0, len1 = j_lst_front.length; u < len1; j_index = ++u) {
+          for (j_index = v = 0, len1 = j_lst_front.length; v < len1; j_index = ++v) {
             j = j_lst_front[j_index];
             results.push((function(j) {
               j_part(0, j_lst_front.length - 1 - j_index, k1, k2);
@@ -768,7 +913,7 @@
       }
     };
     results = [];
-    for (k_index = p = 0, len = k_lst_front.length; p < len; k_index = ++p) {
+    for (k_index = q = 0, len = k_lst_front.length; q < len; k_index = ++q) {
       k = k_lst_front[k_index];
       results.push((function(k) {
         k_part(1, k_index);
@@ -818,8 +963,8 @@
   };
 
   root.GridLines = {
-    init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials) {
-      var fn, fn1, get_segment, get_tail_segment, i, i_all, i_tmp, j_all, j_tmp, k_all, k_tmp, n, o;
+    init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar) {
+      var d, filter_d, filtered, fn, fn1, get_segment, i, n, o;
       root.lines = new THREE.Object3D();
       root.k_last = data.length - 1;
       root.j_last = data[0].length - 1;
@@ -838,28 +983,8 @@
         }
         return lst;
       };
-      get_tail_segment = function(l, r, step) {
-        var fn, lst, n, ref, ref1, x;
-        lst = [l];
-        fn = function(x) {
-          if (x > l) {
-            return lst.push(x);
-          }
-        };
-        for (x = n = 0, ref = r, ref1 = step; ref1 > 0 ? n <= ref : n >= ref; x = n += ref1) {
-          fn(x);
-        }
-        if (lst[lst.length - 1] !== r) {
-          lst.push(r);
-        }
-        return lst;
-      };
-      if (filter.length < 3) {
-        k_all = get_segment(0, k_last, detail[0]);
-        j_all = get_segment(0, j_last, detail[1]);
-        i_all = get_segment(0, i_last, detail[2]);
-        gen_lines(data, scale_coeff, [k_all, j_all, i_all], directions, materials);
-      } else {
+      d = [get_segment(0, k_last, detail[0]), get_segment(0, j_last, detail[1]), get_segment(0, i_last, detail[2])];
+      if (filter.length > 0) {
         fn = function(i) {
           var f;
           if (filter[i][0] < 0) {
@@ -894,59 +1019,77 @@
         for (i = o = 0; o <= 2; i = ++o) {
           fn1(i);
         }
-        j_all = get_segment(0, j_last, detail[1]);
-        i_all = get_segment(0, i_last, detail[2]);
-        k_tmp = get_segment(filter[0][0], filter[0][1], detail[0]);
-        j_tmp = get_segment(filter[1][0], filter[1][1], detail[1]);
-        if (filter[2][0] !== 0) {
-          i_tmp = get_segment(0, filter[2][0], detail[2]);
-          if (k_tmp.length && j_tmp.length && i_tmp.length) {
-            gen_lines(data, scale_coeff, [k_tmp, j_tmp, i_tmp], directions, materials);
+        root.filter_k_segment = get_segment(filter[0][0], filter[0][1], filter[0][2]);
+        root.filter_j_segment = get_segment(filter[1][0], filter[1][1], filter[1][2]);
+        root.filter_i_segment = get_segment(filter[2][0], filter[2][1], filter[2][2]);
+        filtered = function(k, j, i) {
+          if (k >= filter[0][0] && k <= filter[0][1] && j >= filter[1][0] && j <= filter[1][1] && i >= filter[2][0] && i <= filter[2][1]) {
+            return true;
+          } else {
+            return false;
           }
-        }
-        if (filter[2][1] !== i_last) {
-          i_tmp = get_tail_segment(filter[2][1], i_last, detail[2]);
-          if (k_tmp.length && j_tmp.length && i_tmp.length) {
-            gen_lines(data, scale_coeff, [k_tmp, j_tmp, i_tmp], directions, materials);
+        };
+        filter_d = [filter_k_segment, filter_j_segment, filter_i_segment];
+      } else if (filter_scalar.length) {
+        root.scalar = filter_scalar[0] + 2;
+        filtered = function(k, j, i) {
+          var ci_lst, cj_lst, ck, ck_lst, fn2, len, q, res;
+          res = false;
+          ck_lst = k > 0 ? [-1, 0] : [0];
+          cj_lst = j > 0 ? [-1, 0] : [0];
+          ci_lst = i > 0 ? [-1, 0] : [0];
+          if (k + 1 === k_last) {
+            ck_lst.push(1);
           }
-        }
-        if (filter[1][0] !== 0) {
-          j_tmp = get_segment(0, filter[1][0], detail[1]);
-          if (k_tmp.length && j_tmp.length) {
-            gen_lines(data, scale_coeff, [k_tmp, j_tmp, i_all], directions, materials);
+          if (j + 1 === j_last) {
+            cj_lst.push(1);
           }
-        }
-        if (filter[1][1] !== j_last) {
-          j_tmp = get_tail_segment(filter[1][1], j_last, detail[1]);
-          if (k_tmp.length && j_tmp.length) {
-            gen_lines(data, scale_coeff, [k_tmp, j_tmp, i_all], directions, materials);
+          if (i + 1 === i_last) {
+            ci_lst.push(1);
           }
-        }
-        if (filter[0][0] !== 0) {
-          k_tmp = get_segment(0, filter[0][0], detail[0]);
-          if (k_tmp.length) {
-            gen_lines(data, scale_coeff, [k_tmp, j_all, i_all], directions, materials);
+          fn2 = function(ck) {
+            var cj, len1, results, t;
+            results = [];
+            for (t = 0, len1 = cj_lst.length; t < len1; t++) {
+              cj = cj_lst[t];
+              results.push((function(cj) {
+                var ci, len2, results1, u;
+                results1 = [];
+                for (u = 0, len2 = ci_lst.length; u < len2; u++) {
+                  ci = ci_lst[u];
+                  results1.push((function(ci) {
+                    var value;
+                    value = data[k + ck][j + cj][i + ci][scalar];
+                    if (value >= filter_scalar[1][0] && value <= filter_scalar[1][1]) {
+                      return res = true;
+                    }
+                  })(ci));
+                }
+                return results1;
+              })(cj));
+            }
+            return results;
+          };
+          for (q = 0, len = ck_lst.length; q < len; q++) {
+            ck = ck_lst[q];
+            fn2(ck);
           }
-        }
-        if (filter[0][1] !== k_last) {
-          k_tmp = get_tail_segment(filter[0][1], k_last, detail[0]);
-          if (k_tmp.length) {
-            gen_lines(data, scale_coeff, [k_tmp, j_all, i_all], directions, materials);
-          }
-        }
-        k_tmp = get_segment(filter[0][0], filter[0][1], filter[0][2]);
-        j_tmp = get_segment(filter[1][0], filter[1][1], filter[1][2]);
-        i_tmp = get_segment(filter[2][0], filter[2][1], filter[2][2]);
-        if (k_tmp.length && j_tmp.length && i_tmp.length) {
-          gen_lines(data, scale_coeff, [k_tmp, j_tmp, i_tmp], filter_directions, filter_materials, true);
-        }
+          return res;
+        };
+        filter_d = d;
+      } else {
+        filtered = function(k, j, i) {
+          return false;
+        };
+        filter_d = [[], [], []];
       }
+      gen_lines(data, scale_coeff, d, directions, materials, filtered, filter_d, filter_directions, filter_materials);
       return root.lines;
     }
   };
 
   root.GridFaces = {
-    init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials) {
+    init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar) {
       var n1, n2, n3;
       root.faces = new THREE.Object3D();
       if (directions.length < 3) {
@@ -955,7 +1098,7 @@
       if (filter_directions.length < 3) {
         filter_directions = [true, true, true];
       }
-      if (filter.length === 0) {
+      if (filter.length === 0 && filter_scalar.length === 0) {
         gen_surfaces(data, scale_coeff, detail, directions, materials);
       } else if (filter.length > 2) {
         n1 = filter[0][0] !== filter[0][1] ? true : false;
@@ -968,6 +1111,8 @@
             gen_surfaces(data, scale_coeff, detail, filter_directions, filter_materials, filter);
           }
         }
+      } else {
+        gen_surfaces(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar);
       }
       return root.faces;
     }
@@ -975,7 +1120,7 @@
 
   root.GridPoints = {
     init: function(data, scale_coeff, variable, min, max, index, color, radius, options, types) {
-      var calc_color, colors, fn, fn1, fn2, geometry, h, i, k, k_index, key, key_index, keys, len, len1, material, n, o, p, paletter, positions, ref, v0, v1;
+      var calc_color, colors, fn, fn1, fn2, geometry, h, i, k, k_index, key, key_index, keys, len, len1, material, n, o, paletter, positions, q, ref, v0, v1;
       geometry = new THREE.BufferGeometry();
       root.cubes = new THREE.Object3D();
       paletter = [];
@@ -1033,14 +1178,14 @@
       positions = [];
       colors = [];
       fn2 = function(k) {
-        var j, j_index, len2, q, results;
+        var j, j_index, len2, results, t;
         results = [];
-        for (j_index = q = 0, len2 = k.length; q < len2; j_index = ++q) {
+        for (j_index = t = 0, len2 = k.length; t < len2; j_index = ++t) {
           j = k[j_index];
           results.push((function(j) {
-            var i_index, len3, results1, t;
+            var i_index, len3, results1, u;
             results1 = [];
-            for (i_index = t = 0, len3 = j.length; t < len3; i_index = ++t) {
+            for (i_index = u = 0, len3 = j.length; u < len3; i_index = ++u) {
               i = j[i_index];
               results1.push((function(i) {
                 var b, g, r, ref1, sprite, sprite_material;
@@ -1065,7 +1210,7 @@
         }
         return results;
       };
-      for (k_index = p = 0, len1 = data.length; p < len1; k_index = ++p) {
+      for (k_index = q = 0, len1 = data.length; q < len1; k_index = ++q) {
         k = data[k_index];
         fn2(k);
       }

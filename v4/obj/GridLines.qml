@@ -24,6 +24,8 @@ SceneObject
 	property var materials: []
 	property var filter_materials: []
 
+	property var filter_scalar: []
+
 	function make3d() {
 
 		if (!data) return; 
@@ -109,7 +111,7 @@ SceneObject
 			this.sceneObject = GridLines.init(
 					data, scale_coeff, 
 					detail, directions, materials, 
-					filter, filter_directions, filter_materials
+					filter, filter_directions, filter_materials, filter_scalar
 				);
 
 			scene.add(this.sceneObject);
@@ -152,6 +154,8 @@ SceneObject
 					return;
 				}
 
+				if (n > 10) continue;
+
 				if (n == 4) {
 					if (opt[1])
 						//item.material = new THREE.LineBasicMaterial({ 
@@ -185,6 +189,7 @@ SceneObject
 	onDataChanged: makeLater(this);
 	onDetailChanged: makeLater(this);
 	onFilterChanged: makeLater(this);
+	onFilter_scalarChanged: makeLater(this);
 
 	onVisibleChanged: {
 		if (this.sceneObject) {

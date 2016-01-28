@@ -71,7 +71,7 @@ Scene
 		id: loader
 		file: inputFile.file
 
-		onFileChanged: {
+		onGridChanged: {
 			data_counter = 0;
 			data_controls = {};
 		}
@@ -145,6 +145,9 @@ Scene
 		property var cubes: []
 
 		property var counter: 0
+
+		property var filter_scalar: -1
+		property var filter_scalar_range: [0, 0]
 
 		onState_l_materialsChanged: {		
 
@@ -408,9 +411,9 @@ Scene
 				grid.state_f_directions = 
 					(grid.state_f_directions != 0)? 0: 1; }
 
-			f_lines.add(controls, "lines i").onFinishChange(change_l_d); 
-			f_lines.add(controls, "lines j").onFinishChange(change_l_d); 
-			f_lines.add(controls, "lines k").onFinishChange(change_l_d); 
+			f_lines.add(controls, "lines i").onFinishChange(change_l_d).listen(); 
+			f_lines.add(controls, "lines j").onFinishChange(change_l_d).listen(); 
+			f_lines.add(controls, "lines k").onFinishChange(change_l_d).listen(); 
 			f_lines.addColor(controls, "lines i color").onChange(change_l_m); 
 			f_lines.addColor(controls, "lines j color").onChange(change_l_m); 
 			f_lines.addColor(controls, "lines k color").onChange(change_l_m);
@@ -419,9 +422,9 @@ Scene
 			f_lines.addColor(controls, "border color").onChange(change_l_m); 
 			//f_lines.add(controls, "border bold").onFinishChange(change_l_m); 
 							
-			f_faces.add(controls, "faces ij").onFinishChange(change_f_d);
-			f_faces.add(controls, "faces ik").onFinishChange(change_f_d);
-			f_faces.add(controls, "faces jk").onFinishChange(change_f_d);
+			f_faces.add(controls, "faces ij").onFinishChange(change_f_d).listen();
+			f_faces.add(controls, "faces ik").onFinishChange(change_f_d).listen();
+			f_faces.add(controls, "faces jk").onFinishChange(change_f_d).listen();
 			f_faces.addColor(controls, "faces ij color").onChange(change_f_m);
 			f_faces.addColor(controls, "faces ik color").onChange(change_f_m);
 			f_faces.addColor(controls, "faces jk color").onChange(change_f_m);
@@ -612,7 +615,130 @@ Scene
 
 				grid.items_filter.push(c);
 			}
-			
+
+			function filter_scalar_upd(value)
+			{
+				if (grid.s_controls["lines i"])
+				{
+					grid.filter_controls_changed |= 4;
+					grid.s_controls["lines i"] = false;
+				}
+
+				if (grid.s_controls["lines j"])
+				{
+					grid.filter_controls_changed |= 8;
+					grid.s_controls["lines j"] = false;
+				}
+
+				if (grid.s_controls["lines k"])
+				{
+					grid.filter_controls_changed |= 16;
+					grid.s_controls["lines k"] = false;
+				}
+
+				if (grid.s_controls["Default Style"])
+				{
+					grid.filter_controls_changed |= 2;
+					grid.s_controls["Default Style"] = false;
+					grid.style_default = false;
+
+					grid.add_style_folders();
+				}
+
+				if (grid.fs_controls["Default Style"])
+				{
+					grid.fs_controls["faces ij"] = false;
+					grid.fs_controls["faces ik"] = false;
+					grid.fs_controls["faces jk"] = false;
+
+					grid.state_f_directions = 
+							(grid.state_f_directions != 0)? 0: 1;
+
+					grid.fs_controls["Default Style"] = false;
+					grid.style_filter_default = false;
+
+					grid.add_fstyle_folders();
+				}
+
+				for ( var i = 0; i < grid['$items'].length; i++ )
+					grid['$items'][i].option_detail = [1, 1, 1];
+
+				for ( k in grid.d_controls )
+					grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
+							
+				grid.state_l_directions = 
+					(grid.state_l_directions != 0)? 0: 1;
+
+				grid.filter_scalar = value;
+
+				while(grid.items_filter.length > 0)
+				{
+					var c = grid.items_filter.pop();
+					grid.f_filter.remove(c);
+				}
+
+				grid.f_filter.removeFolder("Lines Style");
+				grid.f_filter.removeFolder("Faces Style");
+
+				var a = loader.min[value + 2]; 
+				var b = loader.max[value + 2];
+
+				var a_name = "min";
+				var b_name = "max";
+
+				grid.controls[a_name] = grid.filter_scalar_range[0];
+				grid.controls[b_name] = grid.filter_scalar_range[1];
+
+				var step = (!!loader.types[value - 1])? 1: 0.0001;
+				
+				var c;
+
+				c = grid.f_filter.add(grid.controls, a_name, a, b).step(step);
+
+				c.onFinishChange(function(value)
+				{
+					grid.filter_scalar_range = [
+						value, grid.filter_scalar_range[1]];
+				});
+
+				grid.items_filter.push(c);
+
+				c = grid.f_filter.add(grid.controls, b_name, a, b).step(step);
+
+				c.onFinishChange(function(value)
+				{
+					grid.filter_scalar_range = [
+						grid.filter_scalar_range[0], value];
+				});
+
+				grid.items_filter.push(c);
+
+				c = grid.f_filter.add(grid.fs_controls, "Default Style");
+
+				if ( !grid.style_filter_default ) grid.add_fstyle_folders();
+
+				c.onFinishChange(function(value)
+				{ 
+					if ( value ) 
+					{
+						grid.f_filter.removeFolder("Lines Style");
+						grid.f_filter.removeFolder("Faces Style");
+					}
+					else
+					{
+						grid.add_fstyle_folders();
+						grid.state_l_directions = 
+							(grid.state_l_directions != 0)? 0: 1;
+						grid.state_f_directions = 
+							(grid.state_f_directions != 0)? 0: 1;
+					}
+
+					grid.style_filter_default = value;
+				});
+
+				grid.items_filter.push(c);
+			}
+
 			function add_controls()
 			{
 				if (data_counter == 0 && grid.id_controls.length > 0) {
@@ -776,21 +902,30 @@ Scene
 					grid.s_controls["Default Style"] = true;
 					grid.style_default = true;
 
-					grid.controls["Block"] = "";
+					grid.controls["parameter"] = "";
 
 					var lst = [""];
 
 					for ( var i = 1; i <= loader.grid.length; i++ ) 
-						lst.push(i.toString());
+						lst.push("Block " + i.toString());
 
-					var c = grid.f_filter.add(grid.controls, "Block", lst).listen();
+					for ( var i = 1; i <= loader.types.length; i++ ) 
+						lst.push("Scalar " + i.toString());
+
+					var c = grid.f_filter.add(grid.controls, "parameter", lst).listen();
 
 					grid.id_controls.push([grid.f_filter, c]);
 
 					c.onFinishChange(function(value)
 					{
-						if (value != "")
-						{
+						grid.filter_scalar = -1;
+
+						var v = value.split(' ');
+
+						if (value != "" && v[0] == "Block")
+						{	
+							value = v[1];
+
 							var l;
 
 							l = loader.grid[value - 1][0][0].length;
@@ -800,9 +935,9 @@ Scene
 							l = loader.grid[value - 1].length;
 							grid.filter_detail_k = [l - 2, l - 1, 1];
 
-							filter_upd(value);
+							filter_upd(value);								
 						} 
-						else
+						else 
 						{
 							grid.filter_block = -1;
 
@@ -818,9 +953,7 @@ Scene
 							if(grid.filter_controls_changed != 0)
 							{
 								if ((1 & grid.filter_controls_changed) == 1)
-								{
 									grid.s_controls["internal"] = true;
-								}
 								
 								if ((2 & grid.filter_controls_changed) == 2)
 								{
@@ -831,10 +964,35 @@ Scene
 									grid.f_blocks.removeFolder("Faces Style");
 								}
 
+								if ((4 & grid.filter_controls_changed) == 4)
+									grid.s_controls["lines i"] = true;
+
+								if ((8 & grid.filter_controls_changed) == 8)
+									grid.s_controls["lines j"] = true;
+
+								if ((16 & grid.filter_controls_changed) == 16)
+									grid.s_controls["lines k"] = true;
+
 								grid.filter_controls_changed = 0;
 								
 								grid.state_l_directions = 
 									(grid.state_l_directions != 0)? 0: 1;
+							}
+
+							if (v[0] == "Scalar") 
+							{
+								value = parseInt(v[1]);
+
+								var m = (loader.min[value + 2] + loader.max[value + 2]) / 2;
+								
+								if (!!loader.types[value - 1]) 
+									m = Math.ceil(m);
+
+								grid.filter_scalar_range = [
+									Math.min(loader.max[value + 2], m),
+									loader.max[value + 2]];
+
+								filter_scalar_upd(value);
 							}
 						} 
 					});
@@ -851,7 +1009,7 @@ Scene
 
 						if (grid.filter_block < 0)
 						{
-							grid.controls["Block"] = "1";
+							grid.controls["parameter"] = "Block 1";
 
 							grid.filter_detail_i = [0, 1, 1];
 							grid.filter_detail_j = [0, 1, 1];
@@ -925,7 +1083,7 @@ Scene
 
 							grid.filter_block = b;
 
-							grid.controls["Block"] = (b + 1).toString();
+							grid.controls["parameter"] = "Block " + (b + 1).toString();
 
 							filter_upd((b + 1).toString());
 						}
@@ -961,6 +1119,9 @@ Scene
 					grid.l_filter_colors
 				filter_options: grid.style_filter_default ? [] : 
 					grid.l_filter_options
+
+				filter_scalar: (grid.filter_scalar != -1)? 
+					[grid.filter_scalar, grid.filter_scalar_range]: []
 			}
 
 			GridFaces
@@ -985,6 +1146,9 @@ Scene
 					grid.f_filter_directions
 				filter_colors: grid.f_filter_colors
 				filter_options: grid.f_filter_options
+
+				filter_scalar: (grid.filter_scalar != -1)? 
+					[grid.filter_scalar, grid.filter_scalar_range]: []
 			}
 
 			GridPoints
