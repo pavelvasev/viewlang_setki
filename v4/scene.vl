@@ -92,6 +92,7 @@ Scene
 		property var f_detail
 		property var f_filter
 		property var f_points
+		property var f_export
 
 		property var controls: {}
 		property var d_controls: {}
@@ -148,6 +149,8 @@ Scene
 
 		property var filter_scalar: -1
 		property var filter_scalar_range: [0, 0]
+
+		property var export_buttons: []
 
 		onState_l_materialsChanged: {		
 
@@ -222,6 +225,70 @@ Scene
 				fs_controls["faces ij"], 
 				fs_controls["faces ik"], 
 				fs_controls["faces jk"]];
+		}
+
+		onPoints_variableChanged: {
+			for (var i = 0; i < export_buttons.length; i ++)
+				f_export.remove(export_buttons[i]);
+
+			export_buttons = [];
+
+			if (points_variable != "") {
+				var c = f_export.add(grid.controls, "Legend *.png");
+				export_buttons.push(c);
+				c = f_export.add(grid.controls, "Legend *.svg");
+				export_buttons.push(c);
+			}
+		}
+
+		function save_file(type, obj, name)
+		{
+			if (type == "png")
+			{
+				var canvas = obj;
+
+				try {
+					var isFileSaverSupported = !!new Blob;
+							
+					var ctx = canvas.getContext("2d");
+
+					var binary = atob(
+						canvas.toDataURL("image/png").replace(
+							/^data:image\/(png|jpg);base64,/, "")
+						);
+
+					var raw_buffer = new ArrayBuffer(binary.length);
+					var integers = new Uint8Array(raw_buffer);
+								
+					for (var i = 0; i < binary.length; i++)
+						integers[i] = binary.charCodeAt(i);
+
+					binary = raw_buffer;
+
+					var blob = new Blob([binary], {type: 'image/png'});
+							
+					saveAs(blob, name + ".png");
+
+				} catch (e) {
+					window.open(canvas.toDataURL());
+				}
+			} 
+			else if (type == "svg")
+			{
+				var svg = obj;
+
+				var serializer = new XMLSerializer();
+				var svg_blob = new Blob([serializer.serializeToString(svg)], 
+					{'type': "image/svg+xml"});
+
+				try {
+					var isFileSaverSupported = !!new Blob;
+					saveAs(svg_blob, name + ".svg");
+				} catch (e) {
+					var url = URL.createObjectURL(svg_blob);
+					window.open(url);
+				}
+			}
 		}
 
 		function init_controls()
@@ -299,96 +366,59 @@ Scene
 				fs_controls["Default Style"] = true;
 
 				f_points = gui.addFolder('Points');
-
 				f_filter = gui.addFolder('Filter');
-				
-				var f_export = gui.addFolder('Export');
+				f_export = gui.addFolder('Export');
 
 				grid.controls["*.png"] = function() {
-						try {
-							var isFileSaverSupported = !!new Blob;
-							
-							var canvas = $("body").children("canvas")[0], 
-								ctx = canvas.getContext("2d");
-
-							var binary = atob(
-								canvas.toDataURL("image/png").replace(
-									/^data:image\/(png|jpg);base64,/, "")
-								);
-
-							var raw_buffer = new ArrayBuffer(binary.length);
-							var integers = new Uint8Array(raw_buffer);
-								
-							for (var i = 0; i < binary.length; i++) {
-								integers[i] = binary.charCodeAt(i);
-							}
-
-							binary = raw_buffer;
-
-							var blob = new Blob([binary], {type: 'image/png'});
-							
-							saveAs(blob, "grid.png");
-
-						} catch (e) {
-							window.open(
-								$("body").children("canvas")[0].toDataURL());
-						}
-
-					};
+					save_file("png", $("body").children("canvas")[0], "grid");
+				};
 
 				grid.controls["*.svg [slow]"] = function() {
+					renderer_SVG = new THREE.SVGRenderer();
 
-						renderer_SVG = new THREE.SVGRenderer();
+					renderer_SVG.setSize(window.innerWidth, window.innerHeight);
 
-						renderer_SVG.setSize( 
-							window.innerWidth, window.innerHeight);
+					var cubes = [];
 
-						var cubes = [];
-
-						for ( var i = 0; i < grid['$items'].length; i++ )
+					for ( var i = 0; i < grid['$items'].length; i++ )
+					{
+						if(grid['$items'][i].children[2]['$properties']['visible'].val
+							&& !! grid['$items'][i].children[2]['$properties']['cubes'].val )
 						{
-							if(grid['$items'][i].children[2]['$properties']['visible'].val
-								&& !! grid['$items'][i].children[2]['$properties']['cubes'].val )
-							{
-								cubes.push(
-									grid['$items'][i].children[2]['$properties']['cubes'].val);
-							}
+							cubes.push(
+								grid['$items'][i].children[2]['$properties']['cubes'].val);
 						}
+					}
 
-						if(cubes.length > 0)
-						{
-							var svgscene = jQuery.extend(true, {}, scene);
+					if(cubes.length > 0)
+					{
+						var svgscene = jQuery.extend(true, {}, scene);
 
-							for (var i = 0; i < cubes.length; i++) {
-								svgscene.add(cubes[i]);
-							}
+						for (var i = 0; i < cubes.length; i++)
+							svgscene.add(cubes[i]);
 
-							renderer_SVG.render(svgscene, camera);
+						renderer_SVG.render(svgscene, camera);
+						svgscene = undefined;
+					}
+					else
+					{
+						renderer_SVG.render(scene, camera);
+					}
 
-							svgscene = undefined;
-						}
-						else
-						{
-							renderer_SVG.render(scene, camera);
-						}
+					document.body.appendChild( renderer_SVG.domElement );
+					save_file("svg", $("body").children("svg")[0], "grid");
+					document.body.removeChild( renderer_SVG.domElement );
+				};
 
-						document.body.appendChild( renderer_SVG.domElement );
+				grid.controls["Legend *.png"] = function() {
+					if (grid.points_variable != "") 
+						save_file("png", legend.dom.firstChild.childNodes[0], "legend");
+				};
 
-						var svg = $("body").children("svg")[0];
-						var serializer = new XMLSerializer();
-						var svg_blob = new Blob([serializer.serializeToString(svg)], 
-							{'type': "image/svg+xml"});
-
-						try {
-							var isFileSaverSupported = !!new Blob;
-							saveAs(svg_blob, "grid.svg");
-						} catch (e) {
-							var url = URL.createObjectURL(svg_blob);
-							window.open(url);
-						}
-
-						document.body.removeChild( renderer_SVG.domElement );
-					};
+				grid.controls["Legend *.svg"] = function() {
+					if (grid.points_variable != "") 
+						save_file("svg", legend.dom.firstChild.childNodes[1], "legend");
+				};
 
 				f_export.add(grid.controls, "*.png");
 				f_export.add(grid.controls, "*.svg [slow]");
@@ -467,6 +497,10 @@ Scene
 
 			function filter_upd(value)
 			{
+				grid.fs_controls["faces ij"] = true;
+				grid.fs_controls["faces ik"] = true;
+				grid.fs_controls["faces jk"] = true;
+
 				if (grid.s_controls["internal"])
 				{
 					grid.filter_controls_changed |= 1;
@@ -484,6 +518,9 @@ Scene
 							
 				grid.state_l_directions = 
 					(grid.state_l_directions != 0)? 0: 1;
+
+				grid.state_f_directions = 
+					(grid.state_f_directions != 0)? 0: 1;
 
 				grid.filter_block = value - 1;
 
@@ -645,7 +682,9 @@ Scene
 					grid.add_style_folders();
 				}
 
-				if (grid.fs_controls["Default Style"])
+				if (grid.fs_controls["faces ij"] || 
+					grid.fs_controls["faces ik"] || 
+					grid.fs_controls["faces ik"])
 				{
 					grid.fs_controls["faces ij"] = false;
 					grid.fs_controls["faces ik"] = false;
@@ -653,7 +692,10 @@ Scene
 
 					grid.state_f_directions = 
 							(grid.state_f_directions != 0)? 0: 1;
+				}
 
+				if (grid.fs_controls["Default Style"])
+				{
 					grid.fs_controls["Default Style"] = false;
 					grid.style_filter_default = false;
 
@@ -934,6 +976,15 @@ Scene
 							grid.filter_detail_j = [0, l - 1, 1];
 							l = loader.grid[value - 1].length;
 							grid.filter_detail_k = [l - 2, l - 1, 1];
+
+							if ((4 & grid.filter_controls_changed) == 4)
+								grid.s_controls["lines i"] = true;
+
+							if ((8 & grid.filter_controls_changed) == 8)
+								grid.s_controls["lines j"] = true;
+
+							if ((16 & grid.filter_controls_changed) == 16)
+								grid.s_controls["lines k"] = true;
 
 							filter_upd(value);								
 						} 
@@ -1338,24 +1389,32 @@ Scene
 							!!types[parseInt(variable) - 1]) 
 						{
 							var values = Object.keys(types[parseInt(variable) - 1]);
-							var step = 1 / (values.length + 1);
+							var step = 1 / values.length;
 
 							var cols = [];
-							var color = step % 1;	
+							var color = 0;
+
+							var coeff = Math.floor(values.length / 3);
+
+							if (values.length < 3) { step = 1 / 6; coeff = 1; }
 
 							for (var i = 0; i < values.length; i++)
 							{
-								color = (color + step + 0.5) % 1;
+								color = ((i * coeff) % values.length) * step;
 
-								cols.push("#" + new THREE.Color()
-									.setHSL(color, 0.98, 0.56).getHex().toString(16));
+								if (color > 0.3 && color < 0.4)	
+									cols.push("#" + new THREE.Color()
+										.setHSL(color, 0.96 - color, 0.56).getHex().toString(16));
+								else
+									cols.push("#" + new THREE.Color()
+										.setHSL(color, 0.96, 0.56).getHex().toString(16));
 							}
 
 							return cols;
 						}
 
 						return ["#0022ff", "#00ddff", "#66ff33", "#ffff00", "#ffbb00", "#ff2200"];
-					}	
+					}
 					
 					property var scalar: (grid.points_variable == "" || 
 						parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length)? 
@@ -1370,67 +1429,182 @@ Scene
 					Component.onCompleted: {
 
 						legend.dom.innerHTML = "<div>" + 
-							"<canvas id='legend' " + "width='" + width + "' height='" + 
-								height + "' style='position: relative'> </canvas>" + 
-							"<div style='position: relative; float: left;'>" + 
-								range[0].toString() + "</div>" + 
-							"<div style='position: relative; float: right;'>" + 
-								range[1].toString() + "</div>" + 
+							"<canvas id='legend' style='position: relative'> </canvas>" + 
+							"<svg style='position: relative'> </svg>" +
 							"</div>";
 
 						htmlNode = legend.dom.firstChild;
 						htmlNode.style.display = "none";
 					}
 
-					onRangeChanged: 
-					{
-						var child = htmlNode.childNodes;
-						if (!!child && child.length > 2 && range.length > 1)
-						{
-							child[1].innerHTML = range[0];
-							child[2].innerHTML = range[1];
-						}
-					}
-
-					onScalarChanged:
+					function draw_gradient()
 					{
 						if(!!htmlNode)
 						{
+							var canvas = htmlNode.childNodes[0];
+
+							width = 180;
+							height = 18;
+
+							canvas.width = width;
+							canvas.height = height + 32;
+
+							var svg = htmlNode.childNodes[1];
+							svg.innerHTML = "";
+
+							svg.setAttribute('style', 
+								'width: ' + width + '; height:' + (height + 32).toString());
+
 							htmlNode.style.display = (scalar == "")? "none": "block";
+
+							var ctx = canvas.getContext("2d");
+
+							ctx.rect(0, 0, canvas.width, canvas.height);
+							ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 							if (scalar != "" && loader.types.length > 0 && 
 							!!loader.types[parseInt(scalar) - 1])
 							{
-								var canvas = htmlNode.childNodes[0];
-								var ctx = canvas.getContext("2d");
-								ctx.rect(0, 0, canvas.width, canvas.height);
-								var gradient = ctx.createLinearGradient(0, 0, width, 0);
+								// canvas
+
+								width = 100;
+								height = 32 * colors.length;
+
+								canvas.width = width;
+								canvas.height = height;
+
+								ctx.fillStyle = "#FFFFFF";
+								ctx.fillRect(0, 0, width, height);
+
+								keys = Object.keys(loader.types[scalar - 1]);
 
 								for(var i = 0; i < colors.length; i++)
 								{
-									gradient.addColorStop(i / colors.length, colors[i]);
-									gradient.addColorStop((i + 1) / colors.length, colors[i]);
+									ctx.fillStyle = colors[i];
+									ctx.fillRect(3, 32 * i + 5, 23, 20);
+
+									ctx.fillStyle = "#000000";
+									ctx.font = "14pt Arial";
+
+									ctx.textAlign = "left";
+									ctx.fillText(keys[i].toString(), 33, 32 * i + 22);
 								}
 
-								ctx.fillStyle = gradient;
-								ctx.fillRect(0, 0, width, height);
+								// svg
 
-							} else if (scalar != "") {
-								var canvas = htmlNode.childNodes[0];
-								var ctx = canvas.getContext("2d");
-								ctx.rect(0, 0, canvas.width, canvas.height);
-								var gradient = ctx.createLinearGradient(0, 0, width, 0);
+								svg.setAttribute('style', 
+									'width: ' + width + '; height:' + height);
+
+								var svgns = "http://www.w3.org/2000/svg";
 
 								for(var i = 0; i < colors.length; i++)
 								{
-									gradient.addColorStop(i / (colors.length - 1), colors[i]);
+									var rect = document.createElementNS(svgns, 'rect');
+									rect.setAttributeNS(null, 'x', 3);
+									rect.setAttributeNS(null, 'y', 32 * i + 5);
+									rect.setAttributeNS(null, 'width', 23);
+									rect.setAttributeNS(null, 'height', 20);
+									rect.setAttributeNS(null, 'fill', colors[i]);
+
+									svg.appendChild(rect);
+
+									var text = document.createElementNS(svgns, 'text');
+								
+									text.setAttributeNS(null, 'x', 33);
+									text.setAttributeNS(null, 'y', 32 * i + 22);
+									text.setAttributeNS(null, 'fill', '#000000');
+									text.setAttributeNS(null, 'text-anchor', 'start');
+									text.appendChild(document.createTextNode(
+										keys[i].toString()));
+
+									svg.appendChild(text);
 								}
 
-								ctx.fillStyle = gradient;
-								ctx.fillRect(0, 0, width, height);
 							}
+							else if (scalar != "") 
+							{
+								// canvas
+
+								ctx.fillStyle = "#FFFFFF";
+								ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+								var gradient = ctx.createLinearGradient(0, 0, width, 0);
+
+								for(var i = 0; i < colors.length; i++)
+									gradient.addColorStop(i / (colors.length - 1), colors[i]);
+
+								ctx.fillStyle = gradient;
+								ctx.fillRect(3, 3, width - 6, height + 2);
+
+								ctx.fillStyle = "#000000";
+								ctx.font = "14pt Arial";
+
+								ctx.textAlign = "left";
+								ctx.fillText(range[0].toFixed(5).toString(), 
+									0, height + 22);
+								ctx.textAlign = "right";
+								ctx.fillText(range[1].toFixed(5).toString(), 
+									width, height + 22);
+
+								// svg
+
+								var svgns = "http://www.w3.org/2000/svg";
+
+								var rect = document.createElementNS(svgns, 'rect');
+								rect.setAttributeNS(null, 'x', 3);
+								rect.setAttributeNS(null, 'y', 3);
+								rect.setAttributeNS(null, 'width', width - 6);
+								rect.setAttributeNS(null, 'height', height + 2);
+								
+								var grad = document.createElementNS(svgns, 'linearGradient');
+								grad.setAttributeNS(null, 'id', 'grad');
+
+								for(var i = 0; i < colors.length; i++)
+								{
+									var stop = document.createElementNS(svgns, 'stop');
+									stop.setAttributeNS(null, 'offset', i / (colors.length - 1));
+									stop.setAttributeNS(null, 'stop-color', colors[i]);
+									grad.appendChild(stop);
+								}
+
+								var defs = document.createElementNS(svgns, 'defs')
+								defs.appendChild(grad);
+
+								svg.insertBefore(defs, svg.firstChild);
+								rect.setAttributeNS(null, 'fill', 'url(#grad)');
+								svg.appendChild(rect);
+
+								var text;
+
+								text = document.createElementNS(svgns, 'text');
+								
+								text.setAttributeNS(null, 'x', 0);
+								text.setAttributeNS(null, 'y', height + 22);
+								text.setAttributeNS(null, 'fill', '#000000');
+								text.setAttributeNS(null, 'text-anchor', 'start');
+								text.appendChild(document.createTextNode(
+									range[0].toFixed(5).toString()));
+
+								svg.appendChild(text);
+
+								text = document.createElementNS(svgns, 'text');
+								
+								text.setAttributeNS(null, 'x', width);
+								text.setAttributeNS(null, 'y', height + 22);
+								text.setAttributeNS(null, 'fill', '#000000');
+								text.setAttributeNS(null, 'text-anchor', 'end');
+								text.appendChild(document.createTextNode(
+									range[1].toFixed(5).toString()));
+
+								svg.appendChild(text);
+							}
+
+							svg.style.display = "none";
 						}
 					}
+
+					onRangeChanged: draw_gradient();
+					onScalarChanged: draw_gradient();
 				}
 			}
 		}

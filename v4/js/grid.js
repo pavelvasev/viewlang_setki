@@ -5,15 +5,14 @@
 
   root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
-  root.gen_lines = function(data, scale_coeff, detail, directions, materials, filtered, filter_detail, filter_directions, filter_materials) {
-    var add_seg, border_color, border_line, border_material, border_points, borders, calc_material, coeff, filter_border_color, filter_border_line, filter_border_material, filter_borders, fn, fn1, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border_line, last_border_material, n, o, q, ref, ref1, ref2, ref3, ref4, results;
+  root.gen_lines = function(data, scale_coeff, detail, directions, materials, borders, filtered, filter_detail, filter_directions, filter_materials) {
+    var add_seg, border_color, border_line, border_material, border_points, calc_material, coeff, filter_border_color, filter_border_line, filter_border_material, filter_borders, filter_last_border_line, fn, fn1, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border_line, last_border_material, n, o, q, ref, ref1, ref2, ref3, ref4, results;
     if (directions.length < 4) {
       directions = [true, true, true, true];
     }
     if (filter_directions.length < 4) {
       filter_directions = [true, true, true, true];
     }
-    borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
     coeff = 0;
     border_color = "#000000";
     border_material = [
@@ -53,6 +52,23 @@
       }
       return r;
     };
+    if (borders.length > 5) {
+      filter_last_border_line = function(dir, k, j, i) {
+        var r;
+        if (dir === 0) {
+          r = indexOf.call(borders[3], k) >= 0 && indexOf.call(borders[4], j) >= 0 ? true : false;
+        } else if (dir === 1) {
+          r = indexOf.call(borders[3], k) >= 0 && indexOf.call(borders[5], i) >= 0 ? true : false;
+        } else if (dir === 2) {
+          r = indexOf.call(borders[4], j) >= 0 && indexOf.call(borders[5], i) >= 0 ? true : false;
+        }
+        return r;
+      };
+    } else {
+      filter_last_border_line = function(dir, k, j, i) {
+        return false;
+      };
+    }
     filter_border_line = function(dir, k, j, i) {
       var r;
       if (dir === 0) {
@@ -186,7 +202,7 @@
       results = [];
       for (j = o = 0, ref3 = j_last; 0 <= ref3 ? o <= ref3 : o >= ref3; j = 0 <= ref3 ? ++o : --o) {
         results.push((function(j) {
-          var faces, filter_pnts, flag, fn1, i, pnts, q, ref4, results1, t;
+          var faces, filter_pnts, flag, fn1, i, pnts, q, ref4, ref5, ref6, results1, results2, t, u;
           if (directions[0] && last_border_line(0, k, j, 0)) {
             pnts = [];
             faces = [];
@@ -197,6 +213,16 @@
             }).apply(this), pnts, faces);
             return add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
           } else {
+            if (filter_directions[0] && filter_last_border_line(0, k, j, 0) && borders[5][0] !== borders[5][1]) {
+              pnts = [];
+              faces = [];
+              border_points(0, k, j, (function() {
+                results2 = [];
+                for (var t = ref4 = borders[5][0], ref5 = borders[5][1]; ref4 <= ref5 ? t <= ref5 : t >= ref5; ref4 <= ref5 ? t++ : t--){ results2.push(t); }
+                return results2;
+              }).apply(this), pnts, faces);
+              add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+            }
             pnts = [];
             filter_pnts = [];
             flag = -1;
@@ -223,7 +249,7 @@
                 return flag = 1;
               }
             };
-            for (i = t = 0, ref4 = i_last; 0 <= ref4 ? t <= ref4 : t >= ref4; i = 0 <= ref4 ? ++t : --t) {
+            for (i = u = 0, ref6 = i_last; 0 <= ref6 ? u <= ref6 : u >= ref6; i = 0 <= ref6 ? ++u : --u) {
               fn1(i);
             }
             add_seg(pnts, 0, k, j, 0);
@@ -241,7 +267,7 @@
       results = [];
       for (i = q = 0, ref4 = i_last; 0 <= ref4 ? q <= ref4 : q >= ref4; i = 0 <= ref4 ? ++q : --q) {
         results.push((function(i) {
-          var faces, filter_pnts, flag, fn2, j, pnts, ref5, results1, t, u;
+          var faces, filter_pnts, flag, fn2, j, pnts, ref5, ref6, ref7, results1, results2, t, u, v;
           if (directions[1] && last_border_line(1, k, 0, i)) {
             pnts = [];
             faces = [];
@@ -252,6 +278,16 @@
             }).apply(this), pnts, faces);
             return add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
           } else {
+            if (filter_directions[1] && filter_last_border_line(1, k, 0, i) && borders[4][0] !== borders[4][1]) {
+              pnts = [];
+              faces = [];
+              border_points(1, k, i, (function() {
+                results2 = [];
+                for (var u = ref5 = borders[4][0], ref6 = borders[4][1]; ref5 <= ref6 ? u <= ref6 : u >= ref6; ref5 <= ref6 ? u++ : u--){ results2.push(u); }
+                return results2;
+              }).apply(this), pnts, faces);
+              add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+            }
             pnts = [];
             filter_pnts = [];
             flag = -1;
@@ -278,7 +314,7 @@
                 return flag = 1;
               }
             };
-            for (j = u = 0, ref5 = j_last; 0 <= ref5 ? u <= ref5 : u >= ref5; j = 0 <= ref5 ? ++u : --u) {
+            for (j = v = 0, ref7 = j_last; 0 <= ref7 ? v <= ref7 : v >= ref7; j = 0 <= ref7 ? ++v : --v) {
               fn2(j);
             }
             add_seg(pnts, 1, k, 0, i);
@@ -298,7 +334,7 @@
         results1 = [];
         for (i = t = 0, ref5 = i_last; 0 <= ref5 ? t <= ref5 : t >= ref5; i = 0 <= ref5 ? ++t : --t) {
           results1.push((function(i) {
-            var faces, filter_pnts, flag, fn2, pnts, ref6, results2, u, v;
+            var faces, filter_pnts, flag, fn2, pnts, ref6, ref7, ref8, results2, results3, u, v, w;
             if (directions[2] && last_border_line(2, 0, j, i)) {
               pnts = [];
               faces = [];
@@ -309,6 +345,16 @@
               }).apply(this), pnts, faces);
               return add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
             } else {
+              if (filter_directions[2] && filter_last_border_line(2, 0, j, i) && borders[3][0] !== borders[3][1]) {
+                pnts = [];
+                faces = [];
+                border_points(2, j, i, (function() {
+                  results3 = [];
+                  for (var v = ref6 = borders[3][0], ref7 = borders[3][1]; ref6 <= ref7 ? v <= ref7 : v >= ref7; ref6 <= ref7 ? v++ : v--){ results3.push(v); }
+                  return results3;
+                }).apply(this), pnts, faces);
+                add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+              }
               pnts = [];
               filter_pnts = [];
               flag = -1;
@@ -335,7 +381,7 @@
                   return flag = 1;
                 }
               };
-              for (k = v = 0, ref6 = k_last; 0 <= ref6 ? v <= ref6 : v >= ref6; k = 0 <= ref6 ? ++v : --v) {
+              for (k = w = 0, ref8 = k_last; 0 <= ref8 ? w <= ref8 : w >= ref8; k = 0 <= ref8 ? ++w : --w) {
                 fn2(k);
               }
               add_seg(pnts, 2, 0, j, i);
@@ -964,7 +1010,7 @@
 
   root.GridLines = {
     init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar) {
-      var d, filter_d, filtered, fn, fn1, get_segment, i, n, o;
+      var borders, d, filter_d, filtered, fn, fn1, get_segment, i, n, o;
       root.lines = new THREE.Object3D();
       root.k_last = data.length - 1;
       root.j_last = data[0].length - 1;
@@ -1030,6 +1076,7 @@
           }
         };
         filter_d = [filter_k_segment, filter_j_segment, filter_i_segment];
+        borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1], [filter[0][0], filter[0][1]], [filter[1][0], filter[1][1]], [filter[2][0], filter[2][1]]];
       } else if (filter_scalar.length) {
         root.scalar = filter_scalar[0] + 2;
         filtered = function(k, j, i) {
@@ -1077,13 +1124,15 @@
           return res;
         };
         filter_d = d;
+        borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
       } else {
         filtered = function(k, j, i) {
           return false;
         };
         filter_d = [[], [], []];
+        borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
       }
-      gen_lines(data, scale_coeff, d, directions, materials, filtered, filter_d, filter_directions, filter_materials);
+      gen_lines(data, scale_coeff, d, directions, materials, borders, filtered, filter_d, filter_directions, filter_materials);
       return root.lines;
     }
   };

@@ -1,7 +1,7 @@
 
 root = exports ? this
 
-root.gen_lines = (data, scale_coeff, detail, directions, materials, 
+root.gen_lines = (data, scale_coeff, detail, directions, materials, borders
 	filtered, filter_detail, filter_directions, filter_materials) ->
 	
 	if directions.length < 4
@@ -9,11 +9,6 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials,
 
 	if filter_directions.length < 4
 		filter_directions = [true, true, true, true]
-
-	borders = [
-		[0, data.length - 1], 
-		[0, data[0].length - 1], 
-		[0, data[0][0].length - 1]]
 
 	coeff = 0
 	border_color = "#000000"
@@ -49,6 +44,19 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials,
 		else if dir == 2
 			r = if j in borders[1] or i in borders[2] then true else false
 		r
+
+	if borders.length > 5
+		filter_last_border_line = (dir, k, j, i) ->
+			if dir == 0
+				r = if k in borders[3] and j in borders[4] then true else false
+			else if dir == 1
+				r = if k in borders[3] and i in borders[5] then true else false
+			else if dir == 2
+				r = if j in borders[4] and i in borders[5] then true else false
+			r
+	else
+		filter_last_border_line = (dir, k, j, i) ->
+			false
 
 	filter_border_line = (dir, k, j, i) ->
 		if dir == 0
@@ -164,7 +172,16 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials,
 						
 						border_points(0, k, j, [0..i_last], pnts, faces)
 						add_border_line(pnts, scale_coeff, faces, last_border_material, 100500)
-					else
+
+					else 
+						if filter_directions[0] and filter_last_border_line(0, k, j, 0) and \	
+						borders[5][0] != borders[5][1]
+							pnts = []
+							faces = []
+
+							border_points(0, k, j, [borders[5][0]..borders[5][1]], pnts, faces)
+							add_border_line(pnts, scale_coeff, faces, last_border_material, 100500)
+
 						pnts = []
 						filter_pnts = []
 						flag = -1
@@ -208,6 +225,14 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials,
 						border_points(1, k, i, [0..j_last], pnts, faces)
 						add_border_line(pnts, scale_coeff, faces, last_border_material, 100500)
 					else
+						if filter_directions[1] and filter_last_border_line(1, k, 0, i) and \
+						borders[4][0] != borders[4][1]
+							pnts = []
+							faces = []
+							
+							border_points(1, k, i, [borders[4][0]..borders[4][1]], pnts, faces)
+							add_border_line(pnts, scale_coeff, faces, last_border_material, 100500)
+
 						pnts = []
 						filter_pnts = []
 						flag = -1
@@ -251,6 +276,14 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials,
 						border_points(2, j, i, [0..k_last], pnts, faces)
 						add_border_line(pnts, scale_coeff, faces, last_border_material, 100500)
 					else
+						if filter_directions[2] and filter_last_border_line(2, 0, j, i) and \
+						borders[3][0] != borders[3][1] 
+							pnts = []
+							faces = []
+							
+							border_points(2, j, i, [borders[3][0]..borders[3][1]], pnts, faces)
+							add_border_line(pnts, scale_coeff, faces, last_border_material, 100500)
+
 						pnts = []
 						filter_pnts = []
 						flag = -1
@@ -820,6 +853,14 @@ root.GridLines =
 
 			filter_d = [filter_k_segment, filter_j_segment, filter_i_segment]
 
+			borders = [
+				[0, data.length - 1], 
+				[0, data[0].length - 1], 
+				[0, data[0][0].length - 1],
+				[filter[0][0], filter[0][1]], 
+				[filter[1][0], filter[1][1]], 
+				[filter[2][0], filter[2][1]]]
+
 		else if filter_scalar.length 
 
 			root.scalar = filter_scalar[0] + 2
@@ -848,11 +889,20 @@ root.GridLines =
 				res
 
 			filter_d = d
+
+			borders = [
+				[0, data.length - 1], 
+				[0, data[0].length - 1], 
+				[0, data[0][0].length - 1]]
 		else
 			filtered = (k, j, i) -> false
 			filter_d = [[], [], []]
+			borders = [
+				[0, data.length - 1], 
+				[0, data[0].length - 1], 
+				[0, data[0][0].length - 1]]
 
-		gen_lines(data, scale_coeff, d, directions, materials, 
+		gen_lines(data, scale_coeff, d, directions, materials, borders
 			filtered, filter_d, filter_directions, filter_materials)
 
 		root.lines
