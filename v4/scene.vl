@@ -1389,22 +1389,35 @@ Scene
 							!!types[parseInt(variable) - 1]) 
 						{
 							var values = Object.keys(types[parseInt(variable) - 1]);
-							var step = 1 / values.length;
+
+							var coeff = Math.floor(values.length / 3);
+							var offset = coeff - 1 - (values.length % coeff);	
+
+							var step = 1 / (values.length + offset);
 
 							var cols = [];
 							var color = 0;
 
-							var coeff = Math.floor(values.length / 3);
-
-							if (values.length < 3) { step = 1 / 6; coeff = 1; }
+							if (values.length < 3) { step = 1 / 6; coeff = 1; offset = 0; }
 
 							for (var i = 0; i < values.length; i++)
 							{
-								color = ((i * coeff) % values.length) * step;
+								color = ((i * coeff) % (values.length + offset)) * step;
 
-								if (color > 0.3 && color < 0.4)	
+								if (color > 0.3 && color < 0.45){
+
+									var cf = (i * coeff) % (values.length + offset);
+
+									var v = ((cf % 2)? -1: 1) * 
+										(cf / (values.length + offset)) * 0.3;
+									
 									cols.push("#" + new THREE.Color()
-										.setHSL(color, 0.96 - color, 0.56).getHex().toString(16));
+										.setHSL(color, 0.96 - color + v, 0.56 - v).getHex().toString(16));
+								}
+								else if (color > 0.65 && color < 0.7) {
+									cols.push("#" + new THREE.Color()
+										.setHSL(color, 0.96 - color / 3, 0.56).getHex().toString(16));
+								}
 								else
 									cols.push("#" + new THREE.Color()
 										.setHSL(color, 0.96, 0.56).getHex().toString(16));
