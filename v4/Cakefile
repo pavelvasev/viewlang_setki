@@ -1,0 +1,8 @@
+
+{spawn} = require 'child_process'
+
+task 'build', 'Build project from coffee/*.coffee to js/*.js', ->
+	spawn 'coffee', ['-c', '-o', 'js', 'coffee'], {stdio:'inherit'}
+
+task 'watch', 'Watch and build changes from coffee/*.coffee to js/*.js', ->
+	spawn 'coffee', ['-cw', '-o', 'js', 'coffee'], {stdio:'inherit'}
