@@ -1,13 +1,14 @@
 // Отображение вершин сетки точками + соединение их линией + внесение искажения по оси Z
-import components.distort
+import "https://github.com/pavelvasev/distort_mixer"
 import ".."
 
 SetkaPointsDataApp {
   order: 1
   shader: dist.shader
 
-  DistortZAxisApp {
+  DistortMixer {
     id: dist
-  }
+    // ctag: "left"
+  }  
 
 }
