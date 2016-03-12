@@ -64,14 +64,28 @@ Scene
 		id: inputFile
 		text: "Grid file:"
 		file: Qt.resolvedUrl( "../ris5.dat" )
+		multiple: true
 	}
 
-	Load
-	{
-		id: loader
-		file: inputFile.file
+	Repeater {
+		id: loaders_f1
+		model: inputFile.files.length
+		//onModelChanged: console.log("model=",model);
+		Load {
+			id: loader1
+			file: inputFile.files[ index ]
+		}
+	}
+
+	LoadJoiner {
+	  id: loader
+	  //loaders: [loader1]
+	  loaders: loaders_f1['$items']
+	  onLoadersChanged: console.log("loaders=",loaders);
 
 		onGridChanged: {
+		  console.log("LoadJoner onGridChanged => grid.length=",grid.length);
+		  //debugger;
 			data_counter = 0;
 			data_controls = {};
 		}
