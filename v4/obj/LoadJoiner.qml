@@ -11,14 +11,7 @@ Item
 
 	property var types: []
 
-	onLoadersChanged: {
-	  var ll = loaders;
-	  for (var i=0; i<ll.length; i++) {
-	    ll[i].gridChanged.disconnect( joinTimer, joinTimer.restart );
-	    ll[i].gridChanged.connect( joinTimer, joinTimer.restart );
-	  }
-	  joinTimer.restart()
-	}
+	onLoadersChanged: joinTimer.restart()
 
 	Timer {
 	  id: joinTimer
@@ -49,6 +42,10 @@ Item
 	  var ll = loaders;
 	  for (var i=0; i<ll.length; i++) {
 	    var lo = ll[i];
+	    // сначала отсоединим сигнал, на случай если уже присоединяли ранее
+	    ll[i].gridChanged.disconnect( joinTimer, joinTimer.restart );
+	    // получение сигнала при изменении grid-а
+	    ll[i].gridChanged.connect( joinTimer, joinTimer.restart );
 	    for (var j=0; j<lo.grid.length; j++ )
 	      rgrid.push( lo.grid[j] );
 	  }
