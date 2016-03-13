@@ -805,7 +805,8 @@ Scene
 					block.option_visible = true;
 				}
 
-				var name = "#" + (block.z + 1).toString() + " visible";
+				//var name = "#" + (block.z + 1).toString() + " visible";
+				var name = "#" + (block.z + 1).toString() + " " + (loader.grid[ block.z ].blockname || "visible"); 
 
 				grid.controls[ name ] = true;
 

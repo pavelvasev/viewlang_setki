@@ -116,6 +116,9 @@ Item
 				if (currK.length > 0) result.push( currK );
 				currK = [];
 
+				var filename = "/" + (file.name || file.split("/").pop());
+				for (var i=0; i<result.length; i++) result[i].blockname = (i+1).toString() + filename;
+
 				scale_coeff = calc_scale_coeff(Min, Max);
 				grid = result;
 				min = Min;
