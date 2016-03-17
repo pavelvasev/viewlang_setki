@@ -1,7 +1,7 @@
 
 Item 
 {
-	property var file
+	property var files
 	property var grid: []
 	property var scale_coeff: 1
 	property var min: []
@@ -9,9 +9,23 @@ Item
 
 	property var types: []
 
+	property var status: 0
+
 	property var q: load()
 
 	function load() {
+
+		status = 0;
+
+		var blocks = [];
+		
+		for (var i = 0; i < files.length; i++)
+			blocks.push(1);
+
+		var file_names = [];
+
+		for (var i = 0; i < files.length; i++)
+			file_names.push(files[i].name || files[i].split("/").pop());
 		
 		var result = [];
 
@@ -32,101 +46,120 @@ Item
 
 		var re_zone = /.*ZONE I=\s*(\d+),\s*J=\s*(\d+),\s*K=\s*(\d+),.*/i;
 
-		loadFileC( file, function(data, first, last, acc ) {
-			if (currTail.length > 0) data = currTail + data;
-    
-			var lines = data.split(/\r*\n+/);
-			
-			if (lines.length == 1 && lines[0] == "") lines.pop();
+		var files_counter = 0;
 
-			currTail = last ? "" : lines.pop();
+		for (var fi = 0; fi < files.length; ++fi) {
+			var file = files[fi];
 
-			for (var i = 0; i < lines.length; i++) {
-				var line = lines[i];
+			loadFileC( file, fi, function(data, first, last, acc, id) {
+				if (currTail.length > 0) data = currTail + data;
+				
+				var lines = data.split(/\r*\n+/);
+				
+				if (lines.length == 1 && lines[0] == "") lines.pop();
 
-				if (line == '') continue;
-				if (/["]/.test(line)) continue;
+				currTail = last ? "" : lines.pop();
 
-				var z = line.match(re_zone);
+				for (var i = 0; i < lines.length; i++) {
+					var line = lines[i];
 
-				if (!!z) {
+					if (line == '') continue;
+					if (/["]/.test(line)) continue;
 
-					if (currK.length > 0) {
+					var z = line.match(re_zone);
 
-						result.push( currK );
-						currK = [];
+					if (!!z) {
+
+						if (currK.length > 0) {
+
+							result.push( currK );
+							currK = [];
+						}
+
+						I = z[1]; J = z[2]; K = z[3];
+						
+						continue;
 					}
 
-					I = z[1]; J = z[2]; K = z[3];
-					
-					continue;
+					var numb = line.match(/(\-?\d\S+)/g);
+
+					if (!!numb) { //
+
+						for (var j = 0; j < numb.length; j++) {
+
+							numb[j] = parseFloat(numb[j]); 
+
+							if (Min.length == j) { Min.push(numb[j]); } 
+								else if(Min[j] > numb[j]) { Min[j] = numb[j]; };
+
+							if (Max.length == j) { Max.push(numb[j])} 
+								else if(Max[j] < numb[j]) { Max[j] = numb[j]; };
+
+							if (j > 2)	{
+								if (types.length == j - 3) types.push({});
+
+								if (!!types[j - 3])
+								{
+									n = numb[j];
+
+									if (Number(n) === n && n % 1 !== 0)
+										types[j - 3] = null;
+									else
+										types[j - 3][n] = 1;
+								}
+							}
+						};
+
+						currI.push(numb);
+						if (currI.length == I) {
+
+							currJ.push(currI);
+
+							if (currJ.length == J) {
+
+								currK.push(currJ);
+
+								if (currK.length == K) {
+									currK.blockname = "[" + blocks[id].toString() + 
+										"," + file_names[id] + "]";
+
+									blocks[id] ++;
+
+									result.push(currK); 
+									
+									currK = [];
+								};
+								currJ = [];
+							};
+							currI = [];
+						};
+					};
 				}
 
-				var numb = line.match(/(\-?\d\S+)/g);
+				if (last) {
+					currK.blockname = "[" + blocks[id].toString() + 
+						"," + file_names[id] + "]";
+					
+					blocks[id] ++;
 
-				if (!!numb) { //
+					if (currK.length > 0) result.push( currK );
+					currK = [];
 
-					for (var j = 0; j < numb.length; j++) {
+					scale_coeff = calc_scale_coeff(Min, Max);
+					
+					grid = result;
+					min = Min;
+					max = Max;
 
-						numb[j] = parseFloat(numb[j]); 
+					files_counter ++;
 
-						if (Min.length == j) { Min.push(numb[j]); } 
-							else if(Min[j] > numb[j]) { Min[j] = numb[j]; };
+					if(files_counter == files.length) {
+						status = grid.length;
+					}
+				}
 
-						if (Max.length == j) { Max.push(numb[j])} 
-							else if(Max[j] < numb[j]) { Max[j] = numb[j]; };
-
-						if (j > 2)	{
-							if (types.length == j - 3) types.push({});
-
-							if (!!types[j - 3])
-							{
-								n = numb[j];
-
-								if (Number(n) === n && n % 1 !== 0)
-									types[j - 3] = null;
-								else
-									types[j - 3][n] = 1;
-							}
-						}
-					};
-
-					currI.push(numb);
-					if (currI.length == I) {
-
-						currJ.push(currI);
-
-						if (currJ.length == J) {
-
-							currK.push(currJ);
-
-							if (currK.length == K) {
-								result.push(currK); 
-								
-								currK = [];
-							};
-							currJ = [];
-						};
-						currI = [];
-					};
-				};
-			}
-
-			if (last) {
-				if (currK.length > 0) result.push( currK );
-				currK = [];
-
-				var filename = "/" + (file.name || file.split("/").pop());
-				for (var i=0; i<result.length; i++) result[i].blockname = (i+1).toString() + filename;
-
-				scale_coeff = calc_scale_coeff(Min, Max);
-				grid = result;
-				min = Min;
-				max = Max;
-			}
-
-		});
-	
+			});
+		}
 	}
 
 	function calc_scale_coeff(Min, Max) {
@@ -139,40 +172,40 @@ Item
 	}
 
 	///////////////////////////////////////////////////////////////////////////
-  
-	function loadFileC( file_or_path, handler ) {
-		return loadFileBaseC( Qt.resolvedUrl(file_or_path), true, handler );
-    }
+	
+	function loadFileC( file_or_path, id, handler ) {
+		return loadFileBaseC( Qt.resolvedUrl(file_or_path), id, true, handler );
+	}
 
-	function loadFileBinaryC( file_or_path, handler ) {
-		return loadFileBaseC( Qt.resolvedUrl(file_or_path), false, handler );
+	function loadFileBinaryC( file_or_path, id, handler ) {
+		return loadFileBaseC( Qt.resolvedUrl(file_or_path), id, false, handler );
 	} 
 
 	///////////////////////////////////////////////////////////////////////////
 	
-	function loadFileBaseC( file_or_path, istext, handler ) {
-		if (!file_or_path) return handler("", true, true, {} );
+	function loadFileBaseC( file_or_path, id, istext, handler ) {
+		if (!file_or_path) return handler( "", true, true, {}, id );
 
 		if (file_or_path instanceof File) {
-			parseLocalFile( file_or_path, istext, handler );
+			parseLocalFile( file_or_path, id, istext, handler );
 		} else {
 			return loadFileBase( file_or_path, istext, function(data) { 
-				handler(data, true, true, {} );
+				handler( data, true, true, {}, id );
 			} ); 
 		
-			if (file_or_path.length == 0) return handler("", true, true, {} );
+			if (file_or_path.length == 0) return handler("", true, true, {}, id );
 
 			setFileProgress( file_or_path, "loading", 5 ); // ?
 
 			jQuery.get( file_or_path, function(data) {
 				setFileProgress( file_or_path, "parsing", 50);
-				handler(data, true, true, {} );
+				handler( data, true, true, {}, id );
 				setFileProgress( file_or_path);
 			} );
 		}
 	}
 	
-	function parseLocalFile(file, istext, callback) {
+	function parseLocalFile(file, id, istext, callback) {
 		var fileSize = file.size;
 		var chunkSize = 20 * 1024 * 1024;
 	
@@ -194,7 +227,7 @@ Item
 				updateProgress( 0, "parsing" );
 
 				callback(evt.target.result, firstChunk, offset >= fileSize, 
-					accumulator );
+					accumulator, id );
 				firstChunk = false;
 
 			} else {

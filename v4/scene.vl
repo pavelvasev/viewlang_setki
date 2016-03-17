@@ -64,14 +64,15 @@ Scene
 		id: inputFile
 		text: "Grid file:"
 		file: Qt.resolvedUrl( "../ris5.dat" )
+		multiple: true
 	}
 
 	Load
 	{
 		id: loader
-		file: inputFile.file
+		files: inputFile.files
 
-		onGridChanged: {
+		onStatusChanged: {
 			data_counter = 0;
 			data_controls = {};
 		}
@@ -82,7 +83,7 @@ Scene
 	Repeater
 	{
 		id: grid
-		model: loader.grid.length
+		model: loader.status
 
 		property var gui
 		property var q: init_controls()
@@ -805,8 +806,8 @@ Scene
 					block.option_visible = true;
 				}
 
-				//var name = "#" + (block.z + 1).toString() + " visible";
-				var name = "#" + (block.z + 1).toString() + " " + (loader.grid[ block.z ].blockname || "visible"); 
+				var name = "#" + (block.z + 1).toString() + 
+					(loader.grid[ block.z ].blockname || "visible"); 
 
 				grid.controls[ name ] = true;
 
