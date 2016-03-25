@@ -115,7 +115,7 @@ SceneObjectThreeJs
 	function intersect( pos ) {
 		if (!this.sceneObject) return null;
 
-		raycaster.params.PointCloud.threshold = this.sceneObject.radius ? 
+		raycaster.params.Points.threshold = this.sceneObject.radius ? 
 			this.sceneObject.radius / 4: 0.1;
 		
 		raycaster.setFromCamera( pos, camera );

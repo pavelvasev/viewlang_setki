@@ -1040,9 +1040,9 @@ root.GridPoints =
 		geometry.addAttribute('color', 
 			new THREE.BufferAttribute( new Float32Array(colors), 3 ) );
 
-		material = new THREE.PointCloudMaterial({vertexColors: THREE.VertexColors, size: radius * 2, sizeAttenuation: true})
+		material = new THREE.PointsMaterial({vertexColors: THREE.VertexColors, size: radius * 2, sizeAttenuation: true})
 
-		root.points = new THREE.PointCloud( geometry, material )
+		root.points = new THREE.Points( geometry, material )
 
 		root.points.scale.set(scale_coeff, scale_coeff, scale_coeff)
 		root.points.sortParticles = true;

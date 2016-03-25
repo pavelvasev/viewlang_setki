@@ -11,6 +11,8 @@ Scene
 	property var script_lib_flag_2: false
 	property var script_lib_flag_3: false
 
+	property var redef_flag: false
+
 	property var q: script_init()
 
 	function script_init()
@@ -57,6 +59,17 @@ Scene
 				function() { script_grid_flag = true; });
 
 		renderer.setClearColor( 0xd8dde2, 1 );
+
+		if ( !redef_flag ) {
+			var animate_func = animate;
+
+			animate = function () {
+				animate_func();
+				sprite_upd();
+			}
+
+			redef_flag = true;
+		}
 	}
 
 	FileParam
@@ -66,6 +79,8 @@ Scene
 		file: Qt.resolvedUrl( "../ris5.dat" )
 		multiple: true
 	}
+
+	property var settings: { style_default: true }
 
 	Load
 	{
@@ -78,7 +93,42 @@ Scene
 		}
 	}
 
-	Axis { }
+	Axis 
+	{ 
+		id: axis
+	}
+
+	function sprite_upd() {
+		if (!!axis && 
+			!!axis.caption_obj_x && !!axis.caption_obj_y && !! axis.caption_obj_z)
+		{
+			var scale;
+
+			scale = Math.sqrt(
+				Math.pow(camera.position.x - axis.caption_obj_x.position.x, 2) + 
+				Math.pow(camera.position.y - axis.caption_obj_x.position.y, 2) + 
+				Math.pow(camera.position.z - axis.caption_obj_x.position.z, 2)) / 4;
+
+			axis.caption_obj_x.scale.x = scale;
+			axis.caption_obj_x.scale.y = scale / 4;
+
+			scale = Math.sqrt(
+				Math.pow(camera.position.x - axis.caption_obj_y.position.x, 2) + 
+				Math.pow(camera.position.y - axis.caption_obj_y.position.y, 2) + 
+				Math.pow(camera.position.z - axis.caption_obj_y.position.z, 2)) / 4;
+
+			axis.caption_obj_y.scale.x = scale;
+			axis.caption_obj_y.scale.y = scale / 4;
+
+			scale = Math.sqrt(
+				Math.pow(camera.position.x - axis.caption_obj_z.position.x, 2) + 
+				Math.pow(camera.position.y - axis.caption_obj_z.position.y, 2) + 
+				Math.pow(camera.position.z - axis.caption_obj_z.position.z, 2)) / 4;
+
+			axis.caption_obj_z.scale.x = scale;
+			axis.caption_obj_z.scale.y = scale / 4;
+		}
+	}
 
 	Repeater
 	{
@@ -94,6 +144,7 @@ Scene
 		property var f_filter
 		property var f_points
 		property var f_export
+		property var f_caption
 
 		property var controls: {}
 		property var d_controls: {}
@@ -152,6 +203,11 @@ Scene
 		property var filter_scalar_range: [0, 0]
 
 		property var export_buttons: []
+
+		onModelChanged: {
+			grid.style_default = thescene.settings.style_default;
+			s_controls["Default Style"] = thescene.settings.style_default;
+		}
 
 		onState_l_materialsChanged: {		
 
@@ -343,6 +399,8 @@ Scene
 							(grid.state_f_directions != 0)? 0: 1;
 					}
 					grid.style_default = value;
+
+					thescene.settings.style_default = value;
 				});	
 
 				fs_controls["lines i"] = true;
@@ -368,6 +426,36 @@ Scene
 
 				f_points = gui.addFolder('Points');
 				f_filter = gui.addFolder('Filter');
+				f_caption = gui.addFolder('Captions');
+
+				grid.controls["Axis"] = true;
+				
+				grid.controls["x"] = "X";
+				grid.controls["y"] = "Y";
+				grid.controls["z"] = "Z";
+				
+				grid.controls["font"] = "Normal 14pt Arial";
+
+				f_caption.add(grid.controls, "Axis").onFinishChange(function(value){
+					axis.visible = value;
+				});
+
+				f_caption.add(grid.controls, "x").onFinishChange(function(value){
+					axis.x_text = value;
+				});
+				
+				f_caption.add(grid.controls, "y").onFinishChange(function(value){
+					axis.y_text = value;
+				});
+
+				f_caption.add(grid.controls, "z").onFinishChange(function(value){
+					axis.z_text = value;
+				});
+
+				f_caption.add(grid.controls, "font").onFinishChange(function(value){
+					axis.font = value;
+				});
+
 				f_export = gui.addFolder('Export');
 
 				grid.controls["*.png"] = function() {
@@ -391,12 +479,16 @@ Scene
 						}
 					}
 
-					if(cubes.length > 0)
+					if(cubes.length > 0 || (!!axis && axis.visible))
 					{
 						var svgscene = jQuery.extend(true, {}, scene);
 
-						for (var i = 0; i < cubes.length; i++)
-							svgscene.add(cubes[i]);
+						if(cubes.length > 0)
+							for (var i = 0; i < cubes.length; i++)
+								svgscene.add(cubes[i]);
+
+						if(!!axis && axis.visible)
+							svgscene.add(axis.axis_obj);
 
 						renderer_SVG.render(svgscene, camera);
 						svgscene = undefined;
@@ -407,6 +499,47 @@ Scene
 					}
 
 					document.body.appendChild( renderer_SVG.domElement );
+
+					if (!!axis && axis.visible) {
+
+						var w2 = window.innerWidth / 2;
+						var h2 = window.innerHeight / 2;
+
+						new_caption = function (v, w2, h2, caption) {
+							v.project(camera);
+							
+							var x = ( v.x * w2 );
+							var y = - ( v.y * h2 );
+
+							var svgns = "http://www.w3.org/2000/svg";
+							var text;
+
+							text = document.createElementNS(svgns, 'text');
+							
+							text.setAttributeNS(null, 'x', x);
+							text.setAttributeNS(null, 'y', y);
+							text.setAttributeNS(null, 'fill', '#000000');
+							text.setAttributeNS(null, 'text-anchor', 'center');
+							text.setAttributeNS(null, 'style', 'font: ' + axis.font);
+							text.appendChild(document.createTextNode(caption));
+
+							return text;
+						};
+
+						var text_x = new_caption(new THREE.Vector3(axis.r - 1, -2, 0), 
+							w2, h2, axis.x_text);
+						var text_y = new_caption(new THREE.Vector3(0, axis.r - 2, -1), 
+							w2, h2, axis.y_text);
+						var text_z = new_caption(new THREE.Vector3(0, -2, axis.r - 1), 
+							w2, h2, axis.z_text);
+
+						var svgimg = $("body").children("svg")[0];
+
+						svgimg.appendChild(text_x);
+						svgimg.appendChild(text_y);
+						svgimg.appendChild(text_z);
+					}
+
 					save_file("svg", $("body").children("svg")[0], "grid");
 					document.body.removeChild( renderer_SVG.domElement );
 				};
@@ -427,7 +560,7 @@ Scene
 		}
 
 		function add_style_controls(f_lines, f_faces, controls)
-		{			
+		{
 			var change_l_m = function(value) { 
 				grid.state_l_materials =
 					(grid.state_l_materials != 0)? 0: 1; }
