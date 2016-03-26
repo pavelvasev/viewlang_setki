@@ -410,7 +410,7 @@
       filter_scalar = [];
     }
     if (filter.length < 3 && filter_directions.length < 3) {
-      filter_directions = [false, false, false];
+      filter_directions = [false, false, false, true];
     }
     k_first = 0;
     j_first = 0;
@@ -420,7 +420,7 @@
         return new THREE.Vector3(data[j][i][k][0], data[j][i][k][1], data[j][i][k][2]);
       };
       detail = [det[2], det[0], det[1]];
-      directions = [dir[2], dir[0], dir[1]];
+      directions = [dir[2], dir[0], dir[1], dir[3]];
       materials = [mat[2], mat[0], mat[1]];
       k_last = data[0][0].length - 1;
       j_last = data.length - 1;
@@ -430,7 +430,7 @@
         return new THREE.Vector3(data[i][k][j][0], data[i][k][j][1], data[i][k][j][2]);
       };
       detail = [det[1], det[2], det[0]];
-      directions = [dir[1], dir[2], dir[0]];
+      directions = [dir[1], dir[2], dir[0], dir[3]];
       materials = [mat[1], mat[2], mat[0]];
       k_last = data[0].length - 1;
       j_last = data[0][0].length - 1;
@@ -440,7 +440,7 @@
         return new THREE.Vector3(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
       };
       detail = [det[0], det[1], det[2]];
-      directions = [dir[0], dir[1], dir[2]];
+      directions = [dir[0], dir[1], dir[2], dir[3]];
       materials = [mat[0], mat[1], mat[2]];
       k_last = data.length - 1;
       j_last = data[0].length - 1;
@@ -685,10 +685,10 @@
         for (k = t = 0, ref2 = k_index_size - 1; 0 <= ref2 ? t <= ref2 : t >= ref2; k = 0 <= ref2 ? ++t : --t) {
           fn3(k);
         }
-        if (faces.length > 0 && directions[2]) {
+        if (faces.length > 0 && directions[2] && (directions[3] || i_index === 0 || i_index === i_lst_front.length - 1)) {
           add_surface(vertices, scale_coeff, faces, materials[2], 2);
         }
-        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[2]) {
+        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[2] && (filter_directions[3] || i === i_lst_filter[0] || i === i_lst_filter[i_lst_filter.length - 1])) {
           return add_surface(vertices, scale_coeff, faces_internal, filter_materials[2], 5);
         }
       }
@@ -803,10 +803,10 @@
         for (k = y = 0, ref2 = k_index_size - 1; 0 <= ref2 ? y <= ref2 : y >= ref2; k = 0 <= ref2 ? ++y : --y) {
           fn7(k);
         }
-        if (faces.length > 0 && directions[1]) {
+        if (faces.length > 0 && directions[1] && (directions[3] || j_index === 0 || j_index === j_lst_front.length - 1)) {
           add_surface(vertices, scale_coeff, faces, materials[1], 1);
         }
-        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[1]) {
+        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[1] && (filter_directions[3] || j === j_lst_filter[0] || j === j_lst_filter[j_lst_filter.length - 1])) {
           add_surface(vertices, scale_coeff, faces_internal, filter_materials[1], 4);
         }
       }
@@ -935,10 +935,10 @@
         for (j = u = 0, ref2 = j_size - 1; 0 <= ref2 ? u <= ref2 : u >= ref2; j = 0 <= ref2 ? ++u : --u) {
           fn4(j);
         }
-        if (faces.length > 0 && directions[0]) {
+        if (faces.length > 0 && directions[0] && (directions[3] || k_index === 0 || k_index === k_lst_front.length - 1)) {
           add_surface(vertices, scale_coeff, faces, materials[0], 0);
         }
-        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[0]) {
+        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[0] && (filter_directions[3] || k === k_lst_filter[0] || k === k_lst_filter[k_lst_filter.length - 1])) {
           add_surface(vertices, scale_coeff, faces_internal, filter_materials[0], 3);
         }
       }
@@ -1142,10 +1142,10 @@
       var n1, n2, n3;
       root.faces = new THREE.Object3D();
       if (directions.length < 3) {
-        directions = [false, false, false];
+        directions = [false, false, false, false];
       }
       if (filter_directions.length < 3) {
-        filter_directions = [true, true, true];
+        filter_directions = [true, true, true, true];
       }
       if (filter.length === 0 && filter_scalar.length === 0) {
         gen_surfaces(data, scale_coeff, detail, directions, materials);

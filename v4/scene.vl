@@ -171,11 +171,11 @@ Scene
 			["#000000", "#000000", "#000000", "#0000ff"]
 		property var l_filter_options: [false, true]
 
-		property var f_directions: [false, false, false]
+		property var f_directions: [false, false, false, false]
 		property var f_colors: ["#00ffff", "#ff00ff", "#ffff00"]
 		property var f_options: [0.2]
 
-		property var f_filter_directions: [true, true, true]
+		property var f_filter_directions: [true, true, true, true]
 		property var f_filter_colors: ["#00ff88", "#8800ff", "#ff8800"]
 		property var f_filter_options: [0.2]
 
@@ -276,12 +276,14 @@ Scene
 			f_directions = [
 				s_controls["faces ij"], 
 				s_controls["faces ik"], 
-				s_controls["faces jk"]];
+				s_controls["faces jk"],
+				s_controls["internal faces"]];
 
 			f_filter_directions = [
 				fs_controls["faces ij"], 
 				fs_controls["faces ik"], 
-				fs_controls["faces jk"]];
+				fs_controls["faces jk"],
+				fs_controls["internal faces"]];
 		}
 
 		onPoints_variableChanged: {
@@ -376,6 +378,7 @@ Scene
 				s_controls["faces ij color"] = '#00ffff';
 				s_controls["faces ik color"] = '#ff00ff';
 				s_controls["faces jk color"] = '#ffff00';
+				s_controls["internal faces"] = false;
 				s_controls["faces opacity"] = 0.2;
 
 				s_controls["Default Style"] = true;
@@ -420,6 +423,7 @@ Scene
 				fs_controls["faces ij color"] = '#00ff88';
 				fs_controls["faces ik color"] = '#8800ff';
 				fs_controls["faces jk color"] = '#ff8800';
+				fs_controls["internal faces"] = true;
 				fs_controls["faces opacity"] = 0.2;
 
 				fs_controls["Default Style"] = true;
@@ -592,6 +596,7 @@ Scene
 			f_faces.addColor(controls, "faces ij color").onChange(change_f_m);
 			f_faces.addColor(controls, "faces ik color").onChange(change_f_m);
 			f_faces.addColor(controls, "faces jk color").onChange(change_f_m);
+			f_faces.add(controls, "internal faces").onFinishChange(change_f_d).listen();
 			f_faces.add(controls, "faces opacity", 0, 1).step(0.05)
 				.onFinishChange(change_f_m);
 		}

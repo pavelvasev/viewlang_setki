@@ -8,7 +8,7 @@ SceneObject
 	property var detail: [1, 1, 1]
 	// [k step, j step, i step]
 
-	property var directions: [ false, false, false ]
+	property var directions: [ false, false, false, false ]
 	property var colors: [ "#ffffff", "#ffffff", "#ffffff" ]
 	property var options: [ 0.2 ]
 
@@ -17,7 +17,7 @@ SceneObject
 	//   [j first, j last, j step], 
 	//   [i first, i last, i step] ]
 
-	property var filter_directions: [ false, false, false ]
+	property var filter_directions: [ false, false, false, true ]
 	property var filter_colors: [ "#000000", "#000000", "#000000" ]
 	property var filter_options: [ 0.2 ]
 
