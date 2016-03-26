@@ -1185,6 +1185,9 @@ Scene
 
 					function keypress_event(e) 
 					{
+						if (document.activeElement.type === "text" || 
+							document.activeElement.type === "textarea") return;
+
 						var ch = String.fromCharCode(e.keyCode);
 
 						if (ch != 'k' && ch != 'K' && ch != 'j' && ch != 'J' &&
