@@ -319,17 +319,12 @@ THREE.SVGRenderer = function () {
 
 		if ( material instanceof THREE.SpriteMaterial ) {
 
-			/*_svgNode.setAttribute( 'style', 'fill: ' + material.color.getStyle() );*/
-
-			if(!material.map) {
-				_svgNode.setAttribute( 'style', 'fill: ' + material.color.getStyle() );
-			} else {
-				_svgNode.setAttribute( 'style', 'fill: rgba(255,255,255,0)' );
-			}
+			_svgNode.setAttribute( 'style', 'fill: ' + material.color.getStyle() );
 
 		}
 
-		_svg.appendChild( _svgNode );
+		if( !material.map )
+			_svg.appendChild( _svgNode );
 
 	}
 
