@@ -337,7 +337,8 @@ THREE.SVGRenderer = function () {
 		_svgNode.setAttribute( 'x2', v2.positionScreen.x );
 		_svgNode.setAttribute( 'y2', v2.positionScreen.y );
 
-		if ( material instanceof THREE.LineBasicMaterial ) {
+		if ( material instanceof THREE.LineBasicMaterial && 
+			material.color.getStyle() != "rgb(255,255,255)") {
 
 			_svgNode.setAttribute( 'style', 'fill: none; stroke: ' + material.color.getStyle() + '; stroke-width: ' + material.linewidth + '; stroke-opacity: ' + material.opacity + '; stroke-linecap: ' + material.linecap + '; stroke-linejoin: ' + material.linejoin );
 

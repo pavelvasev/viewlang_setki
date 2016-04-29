@@ -58,7 +58,7 @@ Scene
 				$basePath + "js/grid.js", 
 				function() { script_grid_flag = true; });
 
-		renderer.setClearColor( 0xd8dde2, 1 );
+		renderer.setClearColor( 0xeeeeee, 1 );
 
 		if ( !redef_flag ) {
 			var animate_func = animate;
@@ -76,7 +76,7 @@ Scene
 	{
 		id: inputFile
 		text: "Grid file:"
-		file: Qt.resolvedUrl( "../ris5.dat" )
+		file: Qt.resolvedUrl( "../data/ris5.dat" )
 		multiple: true
 	}
 
@@ -194,8 +194,6 @@ Scene
 		property var point_ind: []
 
 		property var points_options: [false]
-
-		property var cubes: []
 
 		property var counter: 0
 
@@ -483,13 +481,29 @@ Scene
 						}
 					}
 
-					if(cubes.length > 0 || (!!axis && axis.visible))
+					var lines = [];
+
+					for ( var i = 0; i < grid['$items'].length; i++ )
+					{
+						if(grid['$items'][i].children[0]['$properties']['visible'].val
+							&& !! grid['$items'][i].children[0]['$properties']['lines'].val )
+						{
+							lines.push(
+								grid['$items'][i].children[0]['$properties']['lines'].val);
+						}
+					}
+
+					if(cubes.length > 0 || lines.length > 0 || (!!axis && axis.visible))
 					{
 						var svgscene = jQuery.extend(true, {}, scene);
 
 						if(cubes.length > 0)
 							for (var i = 0; i < cubes.length; i++)
 								svgscene.add(cubes[i]);
+
+						if(lines.length > 0)
+							for (var i = 0; i < lines.length; i++)
+								svgscene.add(lines[i]);
 
 						if(!!axis && axis.visible)
 							svgscene.add(axis.axis_obj);
@@ -1372,8 +1386,8 @@ Scene
 			var min_ind;
 
 			for (var i = 0; i < grid['$items'].length ; i++) {
-				
-				var gridpoints = grid['$items'][i]['$tidyupList'][3];
+
+				var gridpoints = grid['$items'][i].children[2];
 
 				var r = gridpoints.intersect( sceneMouse );
 

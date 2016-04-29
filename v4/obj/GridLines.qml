@@ -26,6 +26,8 @@ SceneObject
 
 	property var filter_scalar: []
 
+	property var lines
+
 	function make3d() {
 
 		if (!data) return; 
@@ -38,12 +40,16 @@ SceneObject
 			filter_materials = [];
 
 			for ( var i = 0; i < colors.length; i++ ) {
+				if (colors[i] == "#ffffff") colors[i] = "#fffffe"; // :D
+
 				var tmp;
 
 				if (options[0] && i < 3)
-					tmp = new THREE.LineDashedMaterial({ 
+					/*tmp = new THREE.LineDashedMaterial({ 
 						color: colors[i], linewidth: 1, 
-						dashSize: 0.02, gapSize: 0.01 });
+						dashSize: 0.02, gapSize: 0.01 });*/
+					tmp = new THREE.LineBasicMaterial({ 
+						color: colors[i], linewidth: 1 });
 				else
 					tmp = new THREE.LineBasicMaterial({ 
 						color: colors[i], linewidth: 1 });
@@ -77,9 +83,11 @@ SceneObject
 				var tmp;
 
 				if (filter_options[0] && i < 3)
-					tmp = new THREE.LineDashedMaterial({ 
+					/*tmp = new THREE.LineDashedMaterial({ 
 						color: filter_colors[i], linewidth: 1, 
-						dashSize: 0.02, gapSize: 0.01 });
+						dashSize: 0.02, gapSize: 0.01 });*/
+					tmp = new THREE.LineBasicMaterial({ 
+						color: filter_colors[i], linewidth: 1 });
 				else
 					tmp = new THREE.LineBasicMaterial({ 
 						color: filter_colors[i], linewidth: 1 });
@@ -107,12 +115,18 @@ SceneObject
 				else 
 					filter_materials[4] = tmp;
 			}
-
-			this.sceneObject = GridLines.init(
+			
+			ref = GridLines.init(
 					data, scale_coeff, 
 					detail, directions, materials, 
-					filter, filter_directions, filter_materials, filter_scalar
+					colors, options,
+					filter, filter_directions, filter_materials, 
+					filter_colors, filter_options,
+					filter_scalar
 				);
+
+			this.sceneObject = ref[0];
+			lines = ref[1];
 
 			scene.add(this.sceneObject);
 
@@ -120,68 +134,10 @@ SceneObject
 		}
 	}
 
-	onColorsChanged: updateMaterial();
-	onOptionsChanged: updateMaterial();
-	onFilter_colorsChanged: updateMaterial();
-	onFilter_optionsChanged: updateMaterial();
-
-	function updateMaterial() {
-
-		var obj = this.sceneObject;
-
-		if (obj) {
-
-			for (var i = obj.children.length - 1; i >= 0; i--) {
-				
-				var item = obj.children[i];
-
-				var n = item.name;
-				var tmp = item.material;
-
-				var c, opt;
-				
-				if (n < 5) {
-					c = colors;
-					opt = options;
-				} else {
-					c = filter_colors;
-					opt = filter_options;
-					n -= 5;
-				}
-
-				if (c.length < 4 || opt.length < 2) {
-					makeLater(this);
-					return;
-				}
-
-				if (n > 10) continue;
-
-				if (n == 4) {
-					if (opt[1])
-						//item.material = new THREE.LineBasicMaterial({ 
-						//	color: c[3], linewidth: 2.5 });
-						item.material = new THREE.LineBasicMaterial({ 
-							color: c[3], linewidth: 1 });
-					else
-						item.material = new THREE.LineBasicMaterial({ 
-							color: c[3], linewidth: 1 });
-				} else {
-					if (opt[0] && n < 3) {	
-
-						item.material = new THREE.LineDashedMaterial({ 
-							color: c[n], linewidth: 1, 
-							dashSize: 0.02, gapSize: 0.01 });
-						item.geometry.computeLineDistances();
-					} else {
-						item.material = new THREE.LineBasicMaterial({ 
-							color: c[n], linewidth: 1 });
-					}
-				}
-
-				if (tmp) tmp.dispose();
-			}
-		}
-	}
+	onColorsChanged: makeLater(this);
+	onOptionsChanged: makeLater(this);
+	onFilter_colorsChanged: makeLater(this);
+	onFilter_optionsChanged: makeLater(this);
 
 	onDirectionsChanged: makeLater(this);
 	onFilter_directionsChanged: makeLater(this);
@@ -200,6 +156,19 @@ SceneObject
 	function clear() {
 		clearobj( this.sceneObject ); 
 		this.sceneObject = undefined;
+
+		if(lines) {
+
+			for (var i = lines.children.length - 1; i >= 0; i--) {
+				var obj = lines.children[i];
+
+				if (obj.geometry) obj.geometry.dispose();
+
+				obj = undefined;
+			};
+			
+			lines = undefined;
+		}
 	}
 	
 	function clearobj(obj) {

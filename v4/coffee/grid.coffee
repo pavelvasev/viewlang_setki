@@ -1,8 +1,8 @@
 
 root = exports ? this
 
-root.gen_lines = (data, scale_coeff, detail, directions, materials, borders
-	filtered, filter_detail, filter_directions, filter_materials) ->
+root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, dashed
+	filtered, filter_detail, filter_directions, filter_materials, filter_dashed) ->
 	
 	if directions.length < 4
 		directions = [true, true, true, true]
@@ -153,12 +153,18 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders
 			if filter_directions[dir] and p.length > 1
 				m = calc_material(dir, k, j, i, true)
 				if m.length > 1
-					add_line(p, scale_coeff, m[0], m[1])
+					if filter_border_line(dir, k, j, i)
+						add_line(p, scale_coeff, m[0], m[1])
+					else
+						add_line(p, scale_coeff, m[0], m[1], filter_dashed)
 		else
 			if directions[dir] and p.length > 1
 				m = calc_material(dir, k, j, i)
 				if m.length > 1
-					add_line(p, scale_coeff, m[0], m[1])
+					if border_line(dir, k, j, i)
+						add_line(p, scale_coeff, m[0], m[1])
+					else
+						add_line(p, scale_coeff, m[0], m[1], dashed)
 
 	for k in [0..k_last]
 		do (k) ->
@@ -313,6 +319,328 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders
 
 						add_seg(pnts, 2, 0, j, i)
 						add_seg(filter_pnts, 2, 0, j, i, true)
+
+root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
+	filtered, filter_detail, filter_directions, filter_mat, dashed=false) ->
+	
+	if directions.length < 4
+		directions = [true, true, true, true]
+
+	if filter_directions.length < 4
+		filter_directions = [true, true, true, true]
+
+	coeff = 0
+	
+	border_color = [ 0, 0, 0 ]
+
+	filter_borders = [
+		[filter_detail[0][0], filter_detail[0][ filter_detail[0].length - 1 ]], 
+		[filter_detail[1][0], filter_detail[1][ filter_detail[1].length - 1 ]], 
+		[filter_detail[2][0], filter_detail[2][ filter_detail[2].length - 1 ]]]
+
+	coeff = 5
+
+	filter_border_color = [ 0, 0, 1 ]
+
+	last_border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in borders[0] and j in borders[1] then true else false
+		else if dir == 1
+			r = if k in borders[0] and i in borders[2] then true else false
+		else if dir == 2
+			r = if j in borders[1] and i in borders[2] then true else false
+		r
+
+	border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in borders[0] or j in borders[1] then true else false
+		else if dir == 1
+			r = if k in borders[0] or i in borders[2] then true else false
+		else if dir == 2
+			r = if j in borders[1] or i in borders[2] then true else false
+		r
+
+	if borders.length > 5
+		filter_last_border_line = (dir, k, j, i) ->
+			if dir == 0
+				r = if k in borders[3] and j in borders[4] then true else false
+			else if dir == 1
+				r = if k in borders[3] and i in borders[5] then true else false
+			else if dir == 2
+				r = if j in borders[4] and i in borders[5] then true else false
+			r
+	else
+		filter_last_border_line = (dir, k, j, i) ->
+			false
+
+	filter_border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in filter_borders[0] or j in filter_borders[1] then true else false
+		else if dir == 1
+			r = if k in filter_borders[0] or i in filter_borders[2] then true else false
+		else if dir == 2
+			r = if j in filter_borders[1] or i in filter_borders[2] then true else false
+		r
+
+	[k_first, j_first, i_first] = [0, 0, 0]
+	[k_size, j_size, i_size] = [k_last, j_last, i_last]
+
+	convert_color = (tag) ->
+		value = parseInt(tag.substring(1), 16)
+		[(value >> 16) / 255, ((value & 0x00ff00) >> 8) / 255, (value & 0x0000ff) / 255]
+
+	materials = []
+	filter_materials = []
+
+	if mat.length > 3
+		for i in [0..3]
+			materials.push(convert_color(mat[i]))
+
+	if filter_mat.length > 3
+		for i in [0..3]
+			filter_materials.push(convert_color(filter_mat[i]))
+
+	calc_color = (dir, k, j, i, filter=false) -> 
+
+		if filter == true
+			coeff = 5
+			if filter_materials.length < 4
+				if filter_border_line(dir, k, j, i)
+					color = filter_border_color
+				else
+					mid = 1
+						
+					i_coeff = if dir == 0 then mid else (i - i_first) / i_size 
+					j_coeff = if dir == 1 then mid else (j - j_first) / j_size 
+					k_coeff = if dir == 2 then mid else (k - k_first) / k_size 
+
+					color = [i_coeff, k_coeff, j_coeff]
+			else
+				if filter_border_line(dir, k, j, i)
+					color = filter_materials[3]
+				else 
+					color = if filter_directions[3] then filter_materials[dir] else []
+		else
+			coeff = 0
+			if materials.length < 4
+				if border_line(dir, k, j, i)
+					color = border_color
+				else
+					mid = 0x55 / 255
+
+					i_coeff = if dir == 0 then mid else (i - i_first) / i_size 
+					j_coeff = if dir == 1 then mid else (j - j_first) / j_size 
+					k_coeff = if dir == 2 then mid else (k - k_first) / k_size 
+
+					color = [i_coeff, k_coeff, j_coeff]
+			else
+				if last_border_line(dir, k, j, i) 
+					color = border_color
+				else if border_line(dir, k, j, i)
+					color = materials[3]
+				else 
+					color = if directions[3] then materials[dir] else []
+		color
+
+	last_border_material = new THREE.MeshBasicMaterial( 
+		{ color: 0x000000, side: THREE.DoubleSide } )
+
+	border_points = (dir, a, b, x_seg, pnts, faces) ->
+		
+		for x, x_ind in x_seg
+			do (x) ->
+				if dir == 0
+					[k, j, i] = [a, b, x]
+				else if dir == 1
+					[k, j, i] = [a, x, b]
+				else if dir == 2
+					[k, j, i] = [x, a, b]
+
+				pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff + 0.05, 
+					data[k][j][i][1] * scale_coeff, data[k][j][i][2] * scale_coeff))
+				pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff, 
+					data[k][j][i][1] * scale_coeff + 0.05, data[k][j][i][2] * scale_coeff))
+				pnts.push(new THREE.Vector3(data[k][j][i][0] * scale_coeff, 
+					data[k][j][i][1] * scale_coeff, data[k][j][i][2] * scale_coeff + 0.05))
+				
+				if x_ind != 0
+					s = (x_ind - 1) * 3
+					faces.push(new THREE.Face3(s, s + 1, s + 3))
+					faces.push(new THREE.Face3(s + 1, s + 2, s + 4))
+					faces.push(new THREE.Face3(s + 2, s, s + 5))
+					faces.push(new THREE.Face3(s + 1, s + 4, s + 3))
+					faces.push(new THREE.Face3(s + 2, s + 5, s + 4))
+					faces.push(new THREE.Face3(s, s + 3, s + 5))
+
+	geometry_pnts = []
+	seg_colors = []
+
+	add_seg = (dir, k, j, i, geometry, seg_colors, detail, directions, color) ->
+		if ((dir == 0 and k in detail[0] and j in detail[1]) \
+		or (dir == 1 and k in detail[0] and i in detail[2]) \
+		or (dir == 2 and j in detail[1] and i in detail[2])) \
+		and (directions[3] or border_line(dir, k, j, i))
+			if directions[dir]
+				geometry_pnts.push(data[k][j][i][0], 
+					data[k][j][i][1], data[k][j][i][2])
+				seg_colors.push(color[0], color[1], color[2])
+	
+	for k in [0..k_last]
+		do (k) ->
+				
+			for j in [0..j_last]
+				do (j) ->
+
+					color = calc_color(0, k, j, 0)
+					filter_color = calc_color(0, k, j, 0, true)
+
+					if directions[0] and last_border_line(0, k, j, 0)
+						pnts = []
+						faces = []
+						
+						border_points(0, k, j, [0..i_last], pnts, faces)
+						add_border_line_seg(pnts, scale_coeff, faces, 
+							last_border_material, 100500)
+
+					else 
+						if filter_directions[0] and filter_last_border_line(0, k, j, 0) and \	
+						borders[5][0] != borders[5][1]
+							pnts = []
+							faces = []
+
+							border_points(0, k, j, [borders[5][0]..borders[5][1]], pnts, faces)
+							add_border_line_seg(pnts, scale_coeff, faces, 
+								last_border_material, 100500)
+
+						flag = -1
+
+						for i in [0..i_last - 1]
+							do (i) ->
+
+								if filtered(k, j, i) and filtered(k, j, i + 1)
+									add_seg(0, k, j, i, geometry, seg_colors,
+											filter_detail, filter_directions, filter_color)
+									add_seg(0, k, j, i + 1, geometry, seg_colors,
+											filter_detail, filter_directions, filter_color)
+								else
+									add_seg(0, k, j, i, geometry, seg_colors,
+										detail, directions, color)
+									add_seg(0, k, j, i + 1, geometry, seg_colors,
+										detail, directions, color)
+
+	for k in [0..k_last]
+		do (k) ->
+				
+			for i in [0..i_last]
+				do (i) ->
+
+					color = calc_color(1, k, 0, i)
+					filter_color = calc_color(1, k, 0, i, true)
+
+					if directions[1] and last_border_line(1, k, 0, i)
+						pnts = []
+						faces = []
+						
+						border_points(1, k, i, [0..j_last], pnts, faces)
+						add_border_line_seg(pnts, scale_coeff, faces, 
+							last_border_material, 100500)
+					else
+						if filter_directions[1] and filter_last_border_line(1, k, 0, i) and \
+						borders[4][0] != borders[4][1]
+							pnts = []
+							faces = []
+							
+							border_points(1, k, i, [borders[4][0]..borders[4][1]], pnts, faces)
+							add_border_line_seg(pnts, scale_coeff, faces, 
+								last_border_material, 100500)
+
+						flag = -1
+
+						for j in [0..j_last - 1]
+							do (j) ->
+
+								if filtered(k, j, i) and filtered(k, j + 1, i)
+									add_seg(1, k, j, i, geometry, seg_colors,
+											filter_detail, filter_directions, filter_color)
+									add_seg(1, k, j + 1, i, geometry, seg_colors,
+											filter_detail, filter_directions, filter_color)
+								else
+									add_seg(1, k, j, i, geometry, seg_colors,
+										detail, directions, color)
+									add_seg(1, k, j + 1, i, geometry, seg_colors,
+										detail, directions, color)
+
+	for j in [0..j_last]
+		do (j) ->
+				
+			for i in [0..i_last]
+				do (i) ->
+
+					color = calc_color(2, 0, j, i)
+					filter_color = calc_color(2, 0, j, i, true)
+
+					if directions[2] and last_border_line(2, 0, j, i)
+						pnts = []
+						faces = []
+
+						border_points(2, j, i, [0..k_last], pnts, faces)
+						add_border_line_seg(pnts, scale_coeff, faces, 
+							last_border_material, 100500)
+					else
+						if filter_directions[2] and filter_last_border_line(2, 0, j, i) and \
+						borders[3][0] != borders[3][1] 
+							pnts = []
+							faces = []
+							
+							border_points(2, j, i, [borders[3][0]..borders[3][1]], pnts, faces)
+							add_border_line_seg(pnts, scale_coeff, faces, 
+								last_border_material, 100500)
+
+						flag = -1
+
+						for k in [0..k_last - 1]
+							do (k) ->
+
+								if filtered(k, j, i) and filtered(k + 1, j, i)
+									add_seg(2, k, j, i, geometry, seg_colors,
+											filter_detail, filter_directions, filter_color)
+									add_seg(2, k + 1, j, i, geometry, seg_colors,
+											filter_detail, filter_directions, filter_color)
+								else
+									add_seg(2, k, j, i, geometry, seg_colors,
+										detail, directions, color)
+									add_seg(2, k + 1, j, i, geometry, seg_colors,
+										detail, directions, color)
+
+	if geometry_pnts.length
+
+		geometry = new THREE.BufferGeometry()
+
+		geometry.addAttribute( 'position', new THREE.BufferAttribute( 
+				new Float32Array(geometry_pnts), 3 
+			) )
+
+		geometry.addAttribute( 'color', new THREE.BufferAttribute( 
+				new Float32Array(seg_colors), 3 
+			) )
+
+		geometry.computeBoundingSphere()
+		geometry.computeLineDistances()
+
+		if not dashed
+			material = new THREE.LineBasicMaterial(
+				{ linewidth: 1, vertexColors: THREE.VertexColors })
+		else
+			material = new THREE.LineDashedMaterial(
+				{ linewidth: 1, vertexColors: THREE.VertexColors, dashSize: 0.02, gapSize: 0.01 })
+		
+		sceneObject = new THREE.LineSegments( geometry, material )
+		
+		sceneObject.scale.x = scale_coeff
+		sceneObject.scale.y = scale_coeff
+		sceneObject.scale.z = scale_coeff
+
+		root.lines_seg.add( sceneObject )
 
 root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 	filter=[], filter_directions=[], filter_materials=[], filter_scalar=[]) ->
@@ -748,8 +1076,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 			k_part(1, k_index)
 			k_part(0, k_lst_front.length - 1 - k_index)
 
-
-root.add_line = (pnts, scale_coeff, material, name) ->
+root.add_line = (pnts, scale_coeff, material, name, dashed=false) ->
 	
 	geometry = new THREE.BufferGeometry()
 	
@@ -760,7 +1087,10 @@ root.add_line = (pnts, scale_coeff, material, name) ->
 	geometry.computeBoundingSphere()
 	geometry.computeLineDistances();
 	
-	sceneObject = new THREE.Line( geometry, material )
+	if not dashed
+		sceneObject = new THREE.Line( geometry, material )
+	else
+		sceneObject = new THREE.LineSegments( geometry, material )
 
 	sceneObject.name = name
 	
@@ -784,6 +1114,21 @@ root.add_border_line = (vertices, scale_coeff, faces, material, name) ->
 	sceneObject.name = name
 
 	root.lines.add( sceneObject )
+
+root.add_border_line_seg = (vertices, scale_coeff, faces, material, name) ->
+	
+	geometry = new THREE.Geometry()
+
+	geometry.vertices = vertices
+	geometry.faces = faces
+
+	geometry.computeBoundingSphere()
+
+	sceneObject = new THREE.Mesh(geometry, material)
+
+	sceneObject.name = name
+
+	root.lines_seg.add( sceneObject )
 	
 root.add_surface = (vertices, scale_coeff, faces, material, name) ->
 	
@@ -806,9 +1151,11 @@ root.add_surface = (vertices, scale_coeff, faces, material, name) ->
 
 root.GridLines =
 
-	init: (data, scale_coeff, detail, directions, materials, 
-		filter, filter_directions, filter_materials, filter_scalar) ->
+	init: (data, scale_coeff, detail, directions, materials, colors, options,
+		filter, filter_directions, filter_materials, filter_colors, 
+		filter_options, filter_scalar) ->
 
+		root.lines_seg = new THREE.Object3D()
 		root.lines = new THREE.Object3D()
 
 		root.k_last = data.length - 1
@@ -908,10 +1255,38 @@ root.GridLines =
 				[0, data[0].length - 1], 
 				[0, data[0][0].length - 1]]
 
-		gen_lines(data, scale_coeff, d, directions, materials, borders
-			filtered, filter_d, filter_directions, filter_materials)
+		if options.length < 1
+			options = [false]
+		if filter_options.length < 1
+			filter_options = [false]
+		
+		gen_lines(data, scale_coeff, d, directions, materials, borders, options[0]
+			filtered, filter_d, filter_directions, filter_materials, filter_options[0])
 
-		root.lines
+		if not options[0] and not filter_options[0]
+			gen_lines_seg(data, scale_coeff, d, directions, colors, borders,
+				filtered, filter_d, filter_directions, filter_colors)
+		else
+			gen_lines_seg(data, scale_coeff, d, directions, 
+				colors, borders, filtered, filter_d, [
+					false, false, false, false], 
+				filter_colors, options[0])
+			gen_lines_seg(data, scale_coeff, d, [
+					directions[0], directions[1], directions[2], false], 
+				colors, borders, filtered, filter_d, [
+					false, false, false, false], 
+				filter_colors)
+			gen_lines_seg(data, scale_coeff, d, [
+					false, false, false, false], 
+				colors, borders, filtered, filter_d, filter_directions, 
+				filter_colors, filter_options[0])
+			gen_lines_seg(data, scale_coeff, d, [
+					false, false, false, false], 
+				colors, borders, filtered, filter_d, [
+					filter_directions[0], filter_directions[1], filter_directions[2], false], 
+				filter_colors, filter_options[0])
+
+		[root.lines_seg, root.lines]
 
 root.GridFaces = 
 	init: (data, scale_coeff, detail, directions, materials, 

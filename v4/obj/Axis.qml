@@ -1,6 +1,6 @@
 SceneObject
 {
-	property var r: 30
+	property var r: 40
 	
 	property var x_text: "X"
 	property var y_text: "Y"

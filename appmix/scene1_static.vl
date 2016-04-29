@@ -7,7 +7,7 @@ Scene {
 	{
 		id: inputFile
 		text: "Grid file:"
-		file: Qt.resolvedUrl( "../ris5.dat" )
+		file: Qt.resolvedUrl( "../data/ris5.dat" )
 	}
 
   SetkaContoursApp {

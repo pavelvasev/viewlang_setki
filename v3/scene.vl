@@ -16,7 +16,7 @@ Scene
 	{
 		id: inputFile
 		text: "Grid file:"
-    file: thescene.isRoot ? Qt.resolvedUrl( "../ris5.dat" ) : ""
+    file: thescene.isRoot ? Qt.resolvedUrl( "../data/ris5.dat" ) : ""
 	}
 	
 	Loader3

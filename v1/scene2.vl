@@ -18,7 +18,7 @@ Scene {
   FileParam {
     text: "Файл сетки"
     id: inFile
-    file: thescene.isRoot ? Qt.resolvedUrl( "../ris5.dat" ) : ""
+    file: thescene.isRoot ? Qt.resolvedUrl( "../data/ris5.dat" ) : ""
     //file: "ris5.dat" 
   }
 
