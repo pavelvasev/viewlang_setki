@@ -26,6 +26,8 @@ SceneObject
 
 	property var filter_scalar: []
 
+	property var filter_list: []
+
 	property var lines
 
 	function make3d() {
@@ -122,7 +124,7 @@ SceneObject
 					colors, options,
 					filter, filter_directions, filter_materials, 
 					filter_colors, filter_options,
-					filter_scalar
+					filter_scalar, filter_list
 				);
 
 			this.sceneObject = ref[0];
@@ -146,6 +148,7 @@ SceneObject
 	onDetailChanged: makeLater(this);
 	onFilterChanged: makeLater(this);
 	onFilter_scalarChanged: makeLater(this);
+	onFilter_listChanged: makeLater(this);
 
 	onVisibleChanged: {
 		if (this.sceneObject) {

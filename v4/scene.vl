@@ -200,6 +200,8 @@ Scene
 		property var filter_scalar: -1
 		property var filter_scalar_range: [0, 0]
 
+		property var filter_list: []
+
 		property var export_buttons: []
 
 		onModelChanged: {
@@ -359,6 +361,23 @@ Scene
 				f_visible = f_blocks.addFolder("Visible");
 				f_detail = f_blocks.addFolder("Detail");
 
+				s_controls["all/none"] = function () {
+					if (s_controls["lines i"] || s_controls["lines j"] || 
+						s_controls["lines k"]) {
+						s_controls["lines i"] = false;
+						s_controls["lines j"] = false;
+						s_controls["lines k"] = false;
+					} else {
+						s_controls["internal"] = true;
+						s_controls["lines i"] = true;
+						s_controls["lines j"] = true;
+						s_controls["lines k"] = true;
+					}
+
+					grid.state_l_directions = 
+						(grid.state_l_directions != 0)? 0: 1;
+				}
+
 				s_controls["lines i"] = true;
 				s_controls["lines j"] = true;
 				s_controls["lines k"] = true;
@@ -404,6 +423,23 @@ Scene
 					thescene.settings.style_default = value;
 				});	
 
+				fs_controls["all/none"] = function () {
+					if (fs_controls["lines i"] || fs_controls["lines j"] || 
+						fs_controls["lines k"]) {
+						fs_controls["lines i"] = false;
+						fs_controls["lines j"] = false;
+						fs_controls["lines k"] = false;
+					} else {
+						fs_controls["internal"] = true;
+						fs_controls["lines i"] = true;
+						fs_controls["lines j"] = true;
+						fs_controls["lines k"] = true;
+					}
+
+					grid.state_l_directions = 
+						(grid.state_l_directions != 0)? 0: 1;
+				};
+
 				fs_controls["lines i"] = true;
 				fs_controls["lines j"] = true;
 				fs_controls["lines k"] = true;
@@ -438,25 +474,28 @@ Scene
 				
 				grid.controls["font"] = "Normal 14pt Arial";
 
-				f_caption.add(grid.controls, "Axis").onFinishChange(function(value){
-					axis.visible = value;
-				});
+				grid.controls["background"] = '#eeeeee';
 
-				f_caption.add(grid.controls, "x").onFinishChange(function(value){
-					axis.x_text = value;
-				});
+				f_caption.add(grid.controls, "Axis").onFinishChange(
+					function(value){ axis.visible = value; });
+
+				f_caption.add(grid.controls, "x").onFinishChange(
+					function(value){ axis.x_text = value; });
 				
-				f_caption.add(grid.controls, "y").onFinishChange(function(value){
-					axis.y_text = value;
-				});
+				f_caption.add(grid.controls, "y").onFinishChange(
+					function(value){ axis.y_text = value; });
 
-				f_caption.add(grid.controls, "z").onFinishChange(function(value){
-					axis.z_text = value;
-				});
+				f_caption.add(grid.controls, "z").onFinishChange(
+					function(value){ axis.z_text = value; });
 
-				f_caption.add(grid.controls, "font").onFinishChange(function(value){
-					axis.font = value;
-				});
+				f_caption.add(grid.controls, "font").onFinishChange(
+					function(value){ axis.font = value; });
+
+				f_caption.addColor(grid.controls, "background").onChange(
+					function(value){
+						renderer.setClearColor( 
+							parseInt(value.substring(1), 16), 1 );
+					});
 
 				f_export = gui.addFolder('Export');
 
@@ -593,6 +632,7 @@ Scene
 				grid.state_f_directions = 
 					(grid.state_f_directions != 0)? 0: 1; }
 
+			f_lines.add(controls, "all/none");	
 			f_lines.add(controls, "lines i").onFinishChange(change_l_d).listen(); 
 			f_lines.add(controls, "lines j").onFinishChange(change_l_d).listen(); 
 			f_lines.add(controls, "lines k").onFinishChange(change_l_d).listen(); 
@@ -779,34 +819,10 @@ Scene
 					}
 				});
 
-				c = grid.f_filter.add(grid.fs_controls, "Default Style");
-
-				if ( !grid.style_filter_default )
-					grid.add_fstyle_folders();
-
-				c.onFinishChange(function(value)
-				{ 
-					if ( value ) 
-					{
-						grid.f_filter.removeFolder("Lines Style");
-						grid.f_filter.removeFolder("Faces Style");
-					}
-					else
-					{
-						grid.add_fstyle_folders();
-						grid.state_l_directions = 
-							(grid.state_l_directions != 0)? 0: 1;
-						grid.state_f_directions = 
-							(grid.state_f_directions != 0)? 0: 1;
-					}
-
-					grid.style_filter_default = value;
-				});
-
-				grid.items_filter.push(c);
+				filter_styles_upd();
 			}
 
-			function filter_scalar_upd(value)
+			function filter_cells_upd(value)
 			{
 				if (grid.s_controls["lines i"])
 				{
@@ -854,6 +870,39 @@ Scene
 
 					grid.add_fstyle_folders();
 				}
+			}
+
+			function filter_styles_upd()
+			{
+				var c = grid.f_filter.add(grid.fs_controls, "Default Style");
+
+				if ( !grid.style_filter_default ) grid.add_fstyle_folders();
+
+				c.onFinishChange(function(value)
+				{ 
+					if ( value ) 
+					{
+						grid.f_filter.removeFolder("Lines Style");
+						grid.f_filter.removeFolder("Faces Style");
+					}
+					else
+					{
+						grid.add_fstyle_folders();
+						grid.state_l_directions = 
+							(grid.state_l_directions != 0)? 0: 1;
+						grid.state_f_directions = 
+							(grid.state_f_directions != 0)? 0: 1;
+					}
+
+					grid.style_filter_default = value;
+				});
+
+				grid.items_filter.push(c);	
+			}
+
+			function filter_scalar_upd(value)
+			{
+				filter_cells_upd();
 
 				for ( var i = 0; i < grid['$items'].length; i++ )
 					grid['$items'][i].option_detail = [1, 1, 1];
@@ -908,30 +957,99 @@ Scene
 
 				grid.items_filter.push(c);
 
-				c = grid.f_filter.add(grid.fs_controls, "Default Style");
+				filter_styles_upd();
+			}
 
-				if ( !grid.style_filter_default ) grid.add_fstyle_folders();
+			function filter_list_upd(value) {
+				filter_cells_upd();
 
-				c.onFinishChange(function(value)
-				{ 
-					if ( value ) 
-					{
-						grid.f_filter.removeFolder("Lines Style");
-						grid.f_filter.removeFolder("Faces Style");
+				for ( var i = 0; i < grid['$items'].length; i++ )
+					grid['$items'][i].option_detail = [1, 1, 1];
+
+				for ( k in grid.d_controls )
+					grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
+
+				grid.state_l_directions = 
+					(grid.state_l_directions != 0)? 0: 1;
+
+				while(grid.items_filter.length > 0)
+				{
+					var c = grid.items_filter.pop();
+					grid.f_filter.remove(c);
+				}
+
+				grid.f_filter.removeFolder("Lines Style");
+				grid.f_filter.removeFolder("Faces Style");
+
+				grid.controls["set list"] = function() {
+					var new_text = "";
+
+					for (var i = 0; i < grid.filter_list.length; i++) {
+						var new_text_block = "";
+						
+						for (var j = 0; j < grid.filter_list[i].length; j++) {
+							if (new_text_block.length > 0) new_text_block += ", ";
+
+							new_text_block += 
+								(i + 1).toString() + " " +
+								(grid.filter_list[i][j][0] + 1).toString() + " " +
+								(grid.filter_list[i][j][1] + 1).toString() + " " +
+								(grid.filter_list[i][j][2] + 1).toString();
+						}
+
+						new_text += new_text_block + "\n";
 					}
-					else
-					{
-						grid.add_fstyle_folders();
-						grid.state_l_directions = 
-							(grid.state_l_directions != 0)? 0: 1;
-						grid.state_f_directions = 
-							(grid.state_f_directions != 0)? 0: 1;
-					}
 
-					grid.style_filter_default = value;
-				});
+					list_dialog_text.text = new_text;
+
+					list_dialog.open();
+				};
+
+				var c = grid.f_filter.add(grid.controls, "set list");
 
 				grid.items_filter.push(c);
+
+				var new_filter_list = [];
+
+				for (var i = 0; i < loader.status; i++) {
+					var lst_i = [];
+					
+					for (var j = 0; j < loader.grid[i].length; j++){
+						var a = loader.grid[i][0][0].length - 1;
+						var b = loader.grid[i][0].length - 1;
+						
+						lst_i.push([0, 0, j]);
+						lst_i.push([a, 0, j]);
+						lst_i.push([0, b, j]);
+						lst_i.push([a, b, j]);
+					}
+					
+					for (var j = 0; j < loader.grid[i][0].length; j++){
+						var a = loader.grid[i][0][0].length - 1;
+						var b = loader.grid[i].length - 1;
+						
+						lst_i.push([0, j, 0]);
+						lst_i.push([a, j, 0]);
+						lst_i.push([0, j, b]);
+						lst_i.push([a, j, b]);
+					}
+
+					for (var j = 0; j < loader.grid[i][0][0].length; j++){
+						var a = loader.grid[i][0].length - 1;
+						var b = loader.grid[i].length - 1;
+						
+						lst_i.push([j, 0, 0]);
+						lst_i.push([j, a, 0]);
+						lst_i.push([j, 0, b]);
+						lst_i.push([j, a, b]);
+					}
+
+					new_filter_list.push(lst_i);
+				}
+
+				grid.filter_list = new_filter_list;
+
+				filter_styles_upd();
 			}
 
 			function add_controls()
@@ -1086,6 +1204,15 @@ Scene
 						{
 							grid.points_options = [value];
 						});	
+
+						grid.controls["set palette"] = function() {
+							palette_dialog_text.text = legend.colors.join("\n");
+							palette_dialog.open();
+						};
+
+						var c = grid.f_points.add(grid.controls, "set palette");
+
+						grid.id_controls.push([grid.f_points, c]);
 					}
 
 					// filter
@@ -1108,6 +1235,8 @@ Scene
 					for ( var i = 1; i <= loader.types.length; i++ ) 
 						lst.push("Scalar " + i.toString());
 
+					lst.push("List of cells");
+
 					var c = grid.f_filter.add(grid.controls, "parameter", lst).listen();
 
 					grid.id_controls.push([grid.f_filter, c]);
@@ -1115,6 +1244,7 @@ Scene
 					c.onFinishChange(function(value)
 					{
 						grid.filter_scalar = -1;
+						grid.filter_list = [];
 
 						var v = value.split(' ');
 
@@ -1142,7 +1272,7 @@ Scene
 
 							filter_upd(value);								
 						} 
-						else 
+						else
 						{
 							grid.filter_block = -1;
 
@@ -1198,6 +1328,8 @@ Scene
 									loader.max[value + 2]];
 
 								filter_scalar_upd(value);
+							} else if (v[0] != "") {
+								filter_list_upd();
 							}
 						} 
 					});
@@ -1330,6 +1462,9 @@ Scene
 
 				filter_scalar: (grid.filter_scalar != -1)? 
 					[grid.filter_scalar, grid.filter_scalar_range]: []
+
+				filter_list: (grid.filter_list.length > block.z)? 
+					grid.filter_list[ block.z ] :[] 
 			}
 
 			GridFaces
@@ -1357,6 +1492,9 @@ Scene
 
 				filter_scalar: (grid.filter_scalar != -1)? 
 					[grid.filter_scalar, grid.filter_scalar_range]: []
+
+				filter_list: (grid.filter_list.length > block.z)? 
+					grid.filter_list[ block.z ] :[] 
 			}
 
 			GridPoints
@@ -1609,6 +1747,11 @@ Scene
 
 					function draw_gradient()
 					{
+						if (colors.length < 2) { 
+							colors = get_colors(loader.types, grid.points_variable);
+							return;
+						}
+
 						if(!!htmlNode)
 						{
 							var canvas = htmlNode.childNodes[0];
@@ -1637,8 +1780,10 @@ Scene
 							{
 								// canvas
 
+								keys = Object.keys(loader.types[scalar - 1]);
+
 								width = 100;
-								height = 32 * colors.length;
+								height = 32 * keys.length;
 
 								canvas.width = width;
 								canvas.height = height;
@@ -1646,9 +1791,7 @@ Scene
 								ctx.fillStyle = "#FFFFFF";
 								ctx.fillRect(0, 0, width, height);
 
-								keys = Object.keys(loader.types[scalar - 1]);
-
-								for(var i = 0; i < colors.length; i++)
+								for(var i = 0; i < keys.length; i++)
 								{
 									ctx.fillStyle = colors[i];
 									ctx.fillRect(3, 32 * i + 5, 23, 20);
@@ -1667,7 +1810,7 @@ Scene
 
 								var svgns = "http://www.w3.org/2000/svg";
 
-								for(var i = 0; i < colors.length; i++)
+								for(var i = 0; i < keys.length; i++)
 								{
 									var rect = document.createElementNS(svgns, 'rect');
 									rect.setAttributeNS(null, 'x', 3);
@@ -1773,10 +1916,130 @@ Scene
 						}
 					}
 
-					onRangeChanged: draw_gradient();
+					onRangeChanged: {
+						legend.colors = get_colors(loader.types, grid.points_variable); 
+					}
+
 					onScalarChanged: draw_gradient();
+					onColorsChanged: draw_gradient();
 				}
 			}
 		}
-	}	
+	}
+
+	SimpleDialog 
+	{
+		id: palette_dialog
+		title: "Palette settings"
+		width: palette_dialog_column.width + 30
+		height: palette_dialog_column.height + 50
+
+		Column 
+		{
+			id: palette_dialog_column
+			width: 500
+			spacing: 8
+			x: 10
+			y: 8
+
+			Text 
+			{
+				text: "Enter colors:";
+			}
+
+			TextEdit
+			{
+				id: palette_dialog_text
+				width: parent.width
+				height: 300
+				text: ""
+			}
+
+			Button
+			{
+				text: "Ok"
+				width: 150
+				onClicked: { 
+					var prs = palette_dialog_text.text.replace(
+						/[^\s\d#ABCDEFabcdef]/g, ' ').split(/\s+/);
+
+					var lst = [];
+
+					for (var i = 0; i < prs.length; i++) {
+						if (prs[i].substring(0, 1) != "#") prs[i] = "#" + prs[i];
+						
+						var numb = parseInt(prs[i].substring(1), 16);
+						if (numb >= 0 && numb <= 0xffffff) lst.push(prs[i]);
+					}
+
+					legend.colors = lst;
+					palette_dialog.close();
+				}
+			}
+		}
+	}
+
+	SimpleDialog 
+	{
+		id: list_dialog
+		title: "List of cells"
+		width: list_dialog_column.width + 30
+		height: list_dialog_column.height + 50
+		
+		Column 
+		{
+			id: list_dialog_column
+			width: 800
+			height: 600
+			spacing: 8
+			x: 10
+			y: 8
+			
+			Text 
+			{
+				text: "<b>Enter cells:</b> <i>block i j k</i>";
+			}
+
+			TextEdit
+			{
+				id: list_dialog_text
+				width: parent.width
+				height: parent.height - 100
+				text: ""
+			}
+
+			Button
+			{
+				text: "Ok"
+				width: 150
+				onClicked: { 
+					var prs = list_dialog_text.text.replace(
+						/[^\s\d]/g, ' ').split(/\s+/);
+
+					for (var i = 0; i < prs.length; i ++)
+						prs[i] = parseInt(prs[i]) - 1;
+					for (var i = 0; i < prs.length; i ++)
+						if (!(prs[i] >= 0)) prs.splice(i, 1);
+
+					var lst = [];
+
+					for(var i = 0; i < loader.status; i++)
+						lst.push([]);
+
+					var ind = 0;
+					
+					for (var i = 0; i < prs.length; i += 4) {
+						if(prs[i] >= 0 && prs[i] < lst.length) {
+							lst[prs[i]].push([
+								prs[i + 1], prs[i + 2], prs[i + 3] ]);
+						}
+					}
+
+					grid.filter_list = lst;
+					
+					list_dialog.close();
+				}
+			}
+		}
+	}
 }

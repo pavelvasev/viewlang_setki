@@ -643,7 +643,8 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 		root.lines_seg.add( sceneObject )
 
 root.gen_surfaces = (data, scale_coeff, det, dir, mat,
-	filter=[], filter_directions=[], filter_materials=[], filter_scalar=[]) ->
+	filter=[], filter_directions=[], filter_materials=[], 
+	filter_scalar=[], filter_list=[]) ->
 	
 	if filter.length < 3 and filter_directions.length < 3
 		filter_directions = [false, false, false, true]
@@ -801,6 +802,57 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 
 		internal_area = (dir, k, j, i) ->
 			res = false
+			
+			if k > data.length - 1 or \
+			j > data[0].length - 1 or \
+			i > data[0][0].length - 1
+				return res
+
+			ck_lst = if (dir != 1 and dir != 2 and k > 0) then [-1, 0] else [0]
+			cj_lst = if (dir != 0 and dir != 2 and j > 0) then [-1, 0] else [0]
+			ci_lst = if (dir != 0 and dir != 1 and i > 0) then [-1, 0] else [0]
+
+			ck_lst.push(1) if (k + 1 == data.length - 1)
+			cj_lst.push(1) if (j + 1 == data[0].length - 1)
+			ci_lst.push(1) if (i + 1 == data[0][0].length - 1)
+
+			if not res then for ck in ck_lst
+				do (ck) ->
+					if not res then for cj in cj_lst
+						do (cj) ->
+							if not res then for ci in ci_lst
+								do (ci) ->
+									value = data[k + ck][j + cj][i + ci][scalar]
+									if (value >= filter_scalar[1][0] and \
+									value <= filter_scalar[1][1]) 
+										res = true
+			res
+
+	else if filter_list.length
+		
+		mask = ([] for x in [0...data.length])
+
+		for xk in [0...data.length]
+			do (xk) ->
+				mask[xk] = ([] for x in [0...data[0].length])
+				for xj in [0...data[0].length]
+					do (xj) -> 
+						mask[xk][xj] = (false for [0...data[0][0].length])
+
+		for ind in filter_list
+			do (ind) ->
+				if ind.length and mask.length > ind[2] and \
+				mask[ ind[2] ].length > ind[1] and \
+				mask[ ind[2] ][ ind[1] ].length > ind[0]
+					mask[ ind[2] ][ ind[1] ][ ind[0] ] = true
+
+		internal_area = (dir, k, j, i) ->
+			res = false
+
+			if k > data.length - 1 or \
+			j > data[0].length - 1 or \
+			i > data[0][0].length - 1
+				return res
 				
 			ck_lst = if (dir != 1 and dir != 2 and k > 0) then [-1, 0] else [0]
 			cj_lst = if (dir != 0 and dir != 2 and j > 0) then [-1, 0] else [0]
@@ -810,17 +862,17 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 			cj_lst.push(1) if (j + 1 == data[0].length - 1)
 			ci_lst.push(1) if (i + 1 == data[0][0].length - 1)
 
-			for ck in ck_lst
+			if not res then for ck in ck_lst
 				do (ck) ->
-					for cj in cj_lst
+					if not res then for cj in cj_lst
 						do (cj) ->
-							for ci in ci_lst
+							if not res then for ci in ci_lst
 								do (ci) ->
-									value = data[k + ck][j + cj][i + ci][scalar]
-									if (value >= filter_scalar[1][0] and \
-									value <= filter_scalar[1][1]) 
+									if mask[k + ck][j + cj][i + ci]
 										res = true
 			res
+
+	filter_cells = if filter_list.length or filter_scalar.length then true else false
 
 	i_part = (dir, i_index, k1, k2, j1, j2) ->
 		
@@ -860,15 +912,15 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 
 							if (filter_internal and
 							i >= filter[2][0] and i <= filter[2][1]) or \
-							filter_scalar.length
+							filter_cells
 								
 								k0 = k + k1
 								j0 = j + j1
 												
 								if internal_area(2, k0, j0, i)
-									if filter_scalar.length or (i in i_lst_filter)
+									if filter_cells or (i in i_lst_filter)
 										faces_internal.push(face_0, face_1)
-								else if filter_scalar.length or (i in i_lst_main)
+								else if filter_cells or (i in i_lst_main)
 									faces.push(face_0, face_1)
 							else
 								faces.push(face_0, face_1)
@@ -878,7 +930,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 				add_surface(vertices, scale_coeff, 
 					faces, materials[2], 2)
 
-			if (filter_internal or filter_scalar.length) and faces_internal.length > 0 and 
+			if (filter_internal or filter_cells) and faces_internal.length > 0 and 
 			filter_directions[2] and (filter_directions[3] or i == i_lst_filter[0] or 
 			i == i_lst_filter[i_lst_filter.length - 1])
 				add_surface(vertices, scale_coeff, 
@@ -947,14 +999,14 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 
 							if filter_internal and
 							j >= filter[1][0] and j <= filter[1][1] or \
-							filter_scalar.length
+							filter_cells
 								
 								k0 = k + k1
 												
 								if internal_area(1, k0, j, i)
-									if filter_scalar.length or (j in j_lst_filter)
+									if filter_cells or (j in j_lst_filter)
 										faces_internal.push(face_0, face_1)
-								else if filter_scalar.length or (j in j_lst_main)
+								else if filter_cells or (j in j_lst_main)
 									faces.push(face_0, face_1)
 							else
 								faces.push(face_0, face_1)
@@ -964,7 +1016,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 				add_surface(vertices, scale_coeff, 
 					faces, materials[1], 1)
 
-			if (filter_internal or filter_scalar.length) and faces_internal.length > 0 and 
+			if (filter_internal or filter_cells) and faces_internal.length > 0 and 
 			filter_directions[1] and (filter_directions[3] or j == j_lst_filter[0] or 
 			j == j_lst_filter[j_lst_filter.length - 1])
 				add_surface(vertices, scale_coeff, 
@@ -1041,11 +1093,11 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 
 							if filter_internal and
 							k >= filter[0][0] and k <= filter[0][1] or \
-							filter_scalar.length
+							filter_cells
 								if internal_area(0, k, j, i)
-									if filter_scalar.length or (k in k_lst_filter)
+									if filter_cells or (k in k_lst_filter)
 										faces_internal.push(face_0, face_1)
-								else if filter_scalar.length or (k in k_lst_main)
+								else if filter_cells or (k in k_lst_main)
 									faces.push(face_0, face_1)
 							else
 								faces.push(face_0, face_1)
@@ -1054,7 +1106,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 			(directions[3] or k_index == 0 or k_index == k_lst_front.length - 1)
 				add_surface(vertices, scale_coeff, faces, materials[0], 0)
 
-			if (filter_internal or filter_scalar.length) and faces_internal.length > 0 and 
+			if (filter_internal or filter_cells) and faces_internal.length > 0 and 
 			filter_directions[0] and (filter_directions[3] or k == k_lst_filter[0] or 
 			k == k_lst_filter[k_lst_filter.length - 1])
 				add_surface(vertices, scale_coeff, faces_internal, 
@@ -1153,7 +1205,7 @@ root.GridLines =
 
 	init: (data, scale_coeff, detail, directions, materials, colors, options,
 		filter, filter_directions, filter_materials, filter_colors, 
-		filter_options, filter_scalar) ->
+		filter_options, filter_scalar, filter_list) ->
 
 		root.lines_seg = new THREE.Object3D()
 		root.lines = new THREE.Object3D()
@@ -1229,15 +1281,61 @@ root.GridLines =
 				cj_lst.push(1) if (j + 1 == j_last)
 				ci_lst.push(1) if (i + 1 == i_last)
 				
-				for ck in ck_lst
+				if not res then for ck in ck_lst
 					do (ck) ->
-						for cj in cj_lst
+						if not res then for cj in cj_lst
 							do (cj) ->
-								for ci in ci_lst
+								if not res then for ci in ci_lst
 									do (ci) ->
 										value = data[k + ck][j + cj][i + ci][scalar]
 										if (value >= filter_scalar[1][0] and \
 										value <= filter_scalar[1][1]) 
+											res = true
+				res
+
+			filter_d = d
+
+			borders = [
+				[0, data.length - 1], 
+				[0, data[0].length - 1], 
+				[0, data[0][0].length - 1]]
+
+		else if filter_list.length
+
+			mask = ([] for x in [0...data.length])
+
+			for xk in [0...data.length]
+				do (xk) ->
+					mask[xk] = ([] for x in [0...data[0].length])
+					for xj in [0...data[0].length]
+						do (xj) -> 
+							mask[xk][xj] = (false for [0...data[0][0].length])
+
+			for ind in filter_list
+				do (ind) ->
+					if ind.length and mask.length > ind[2] and \
+					mask[ ind[2] ].length > ind[1] and \
+					mask[ ind[2] ][ ind[1] ].length > ind[0]
+						mask[ ind[2] ][ ind[1] ][ ind[0] ] = true
+
+			filtered = (k, j, i) -> 
+				res = false
+
+				ck_lst = if (k > 0) then [-1, 0] else [0]
+				cj_lst = if (j > 0) then [-1, 0] else [0]
+				ci_lst = if (i > 0) then [-1, 0] else [0]
+
+				ck_lst.push(1) if (k + 1 == k_last)
+				cj_lst.push(1) if (j + 1 == j_last)
+				ci_lst.push(1) if (i + 1 == i_last)
+				
+				if not res then for ck in ck_lst
+					do (ck) ->
+						if not res then for cj in cj_lst
+							do (cj) ->
+								if not res then for ci in ci_lst
+									do (ci) ->
+										if mask[k + ck][j + cj][i + ci]
 											res = true
 				res
 
@@ -1290,7 +1388,7 @@ root.GridLines =
 
 root.GridFaces = 
 	init: (data, scale_coeff, detail, directions, materials, 
-		filter, filter_directions, filter_materials, filter_scalar) ->
+		filter, filter_directions, filter_materials, filter_scalar, filter_list) ->
 
 		root.faces = new THREE.Object3D()
 
@@ -1300,7 +1398,9 @@ root.GridFaces =
 		if filter_directions.length < 3
 			filter_directions = [true, true, true, true]
 
-		if filter.length == 0 and filter_scalar.length == 0
+		if filter.length == 0 and filter_scalar.length == 0 and \
+		filter_list.length == 0
+
 			gen_surfaces(data, scale_coeff, detail, directions, materials)
 			
 		else if filter.length > 2
@@ -1320,7 +1420,8 @@ root.GridFaces =
 						filter_directions, filter_materials, filter)
 		else
 			gen_surfaces(data, scale_coeff, detail, directions, materials, 
-				filter, filter_directions, filter_materials, filter_scalar)
+				filter, filter_directions, filter_materials, 
+				filter_scalar, filter_list)
 
 		root.faces
 

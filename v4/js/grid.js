@@ -757,8 +757,8 @@
     }
   };
 
-  root.gen_surfaces = function(data, scale_coeff, det, dir, mat, filter, filter_directions, filter_materials, filter_scalar) {
-    var compare, detail, directions, filter_internal, fn, fn1, get_segment, i, i_first, i_last, i_lst_back, i_lst_filter, i_lst_front, i_lst_main, i_part, i_size, internal_area, j_first, j_last, j_lst_back, j_lst_filter, j_lst_front, j_lst_main, j_part, j_size, k, k_first, k_index, k_last, k_lst_back, k_lst_filter, k_lst_front, k_lst_main, k_part, k_size, len, materials, merge, n, o, q, results, vec;
+  root.gen_surfaces = function(data, scale_coeff, det, dir, mat, filter, filter_directions, filter_materials, filter_scalar, filter_list) {
+    var compare, detail, directions, filter_cells, filter_internal, fn, fn1, fn2, fn3, get_segment, i, i_first, i_last, i_lst_back, i_lst_filter, i_lst_front, i_lst_main, i_part, i_size, ind, internal_area, j_first, j_last, j_lst_back, j_lst_filter, j_lst_front, j_lst_main, j_part, j_size, k, k_first, k_index, k_last, k_lst_back, k_lst_filter, k_lst_front, k_lst_main, k_part, k_size, len, len1, mask, materials, merge, n, o, q, ref, results, t, u, vec, x, xk;
     if (filter == null) {
       filter = [];
     }
@@ -770,6 +770,9 @@
     }
     if (filter_scalar == null) {
       filter_scalar = [];
+    }
+    if (filter_list == null) {
+      filter_list = [];
     }
     if (filter.length < 3 && filter_directions.length < 3) {
       filter_directions = [false, false, false, true];
@@ -937,6 +940,9 @@
       internal_area = function(dir, k, j, i) {
         var ci_lst, cj_lst, ck, ck_lst, fn2, len, q, res;
         res = false;
+        if (k > data.length - 1 || j > data[0].length - 1 || i > data[0][0].length - 1) {
+          return res;
+        }
         ck_lst = dir !== 1 && dir !== 2 && k > 0 ? [-1, 0] : [0];
         cj_lst = dir !== 0 && dir !== 2 && j > 0 ? [-1, 0] : [0];
         ci_lst = dir !== 0 && dir !== 1 && i > 0 ? [-1, 0] : [0];
@@ -949,38 +955,142 @@
         if (i + 1 === data[0][0].length - 1) {
           ci_lst.push(1);
         }
-        fn2 = function(ck) {
-          var cj, len1, results, t;
-          results = [];
-          for (t = 0, len1 = cj_lst.length; t < len1; t++) {
-            cj = cj_lst[t];
-            results.push((function(cj) {
-              var ci, len2, results1, u;
-              results1 = [];
-              for (u = 0, len2 = ci_lst.length; u < len2; u++) {
-                ci = ci_lst[u];
-                results1.push((function(ci) {
-                  var value;
-                  value = data[k + ck][j + cj][i + ci][scalar];
-                  if (value >= filter_scalar[1][0] && value <= filter_scalar[1][1]) {
-                    return res = true;
+        if (!res) {
+          fn2 = function(ck) {
+            var cj, len1, results, t;
+            if (!res) {
+              results = [];
+              for (t = 0, len1 = cj_lst.length; t < len1; t++) {
+                cj = cj_lst[t];
+                results.push((function(cj) {
+                  var ci, len2, results1, u;
+                  if (!res) {
+                    results1 = [];
+                    for (u = 0, len2 = ci_lst.length; u < len2; u++) {
+                      ci = ci_lst[u];
+                      results1.push((function(ci) {
+                        var value;
+                        value = data[k + ck][j + cj][i + ci][scalar];
+                        if (value >= filter_scalar[1][0] && value <= filter_scalar[1][1]) {
+                          return res = true;
+                        }
+                      })(ci));
+                    }
+                    return results1;
                   }
-                })(ci));
+                })(cj));
               }
-              return results1;
-            })(cj));
+              return results;
+            }
+          };
+          for (q = 0, len = ck_lst.length; q < len; q++) {
+            ck = ck_lst[q];
+            fn2(ck);
+          }
+        }
+        return res;
+      };
+    } else if (filter_list.length) {
+      mask = (function() {
+        var q, ref, results;
+        results = [];
+        for (x = q = 0, ref = data.length; 0 <= ref ? q < ref : q > ref; x = 0 <= ref ? ++q : --q) {
+          results.push([]);
+        }
+        return results;
+      })();
+      fn2 = function(xk) {
+        var ref1, results, t, xj;
+        mask[xk] = (function() {
+          var ref1, results, t;
+          results = [];
+          for (x = t = 0, ref1 = data[0].length; 0 <= ref1 ? t < ref1 : t > ref1; x = 0 <= ref1 ? ++t : --t) {
+            results.push([]);
           }
           return results;
-        };
-        for (q = 0, len = ck_lst.length; q < len; q++) {
-          ck = ck_lst[q];
-          fn2(ck);
+        })();
+        results = [];
+        for (xj = t = 0, ref1 = data[0].length; 0 <= ref1 ? t < ref1 : t > ref1; xj = 0 <= ref1 ? ++t : --t) {
+          results.push((function(xj) {
+            return mask[xk][xj] = (function() {
+              var ref2, results1, u;
+              results1 = [];
+              for (u = 0, ref2 = data[0][0].length; 0 <= ref2 ? u < ref2 : u > ref2; 0 <= ref2 ? u++ : u--) {
+                results1.push(false);
+              }
+              return results1;
+            })();
+          })(xj));
+        }
+        return results;
+      };
+      for (xk = q = 0, ref = data.length; 0 <= ref ? q < ref : q > ref; xk = 0 <= ref ? ++q : --q) {
+        fn2(xk);
+      }
+      fn3 = function(ind) {
+        if (ind.length && mask.length > ind[2] && mask[ind[2]].length > ind[1] && mask[ind[2]][ind[1]].length > ind[0]) {
+          return mask[ind[2]][ind[1]][ind[0]] = true;
+        }
+      };
+      for (t = 0, len = filter_list.length; t < len; t++) {
+        ind = filter_list[t];
+        fn3(ind);
+      }
+      internal_area = function(dir, k, j, i) {
+        var ci_lst, cj_lst, ck, ck_lst, fn4, len1, res, u;
+        res = false;
+        if (k > data.length - 1 || j > data[0].length - 1 || i > data[0][0].length - 1) {
+          return res;
+        }
+        ck_lst = dir !== 1 && dir !== 2 && k > 0 ? [-1, 0] : [0];
+        cj_lst = dir !== 0 && dir !== 2 && j > 0 ? [-1, 0] : [0];
+        ci_lst = dir !== 0 && dir !== 1 && i > 0 ? [-1, 0] : [0];
+        if (k + 1 === data.length - 1) {
+          ck_lst.push(1);
+        }
+        if (j + 1 === data[0].length - 1) {
+          cj_lst.push(1);
+        }
+        if (i + 1 === data[0][0].length - 1) {
+          ci_lst.push(1);
+        }
+        if (!res) {
+          fn4 = function(ck) {
+            var cj, len2, results, v;
+            if (!res) {
+              results = [];
+              for (v = 0, len2 = cj_lst.length; v < len2; v++) {
+                cj = cj_lst[v];
+                results.push((function(cj) {
+                  var ci, len3, results1, w;
+                  if (!res) {
+                    results1 = [];
+                    for (w = 0, len3 = ci_lst.length; w < len3; w++) {
+                      ci = ci_lst[w];
+                      results1.push((function(ci) {
+                        if (mask[k + ck][j + cj][i + ci]) {
+                          return res = true;
+                        }
+                      })(ci));
+                    }
+                    return results1;
+                  }
+                })(cj));
+              }
+              return results;
+            }
+          };
+          for (u = 0, len1 = ck_lst.length; u < len1; u++) {
+            ck = ck_lst[u];
+            fn4(ck);
+          }
         }
         return res;
       };
     }
+    filter_cells = filter_list.length || filter_scalar.length ? true : false;
     i_part = function(dir, i_index, k1, k2, j1, j2) {
-      var faces, faces_internal, fn2, fn3, get_face_0, get_face_1, j_index_size, k, k_index_size, q, ref, ref1, ref2, t, vertices;
+      var faces, faces_internal, fn4, fn5, get_face_0, get_face_1, j_index_size, k, k_index_size, ref1, ref2, ref3, u, v, vertices;
       if (dir === 0) {
         get_face_0 = function(a, b) {
           return new THREE.Face3(b, a + 1, a);
@@ -1002,39 +1112,39 @@
       j_index_size = j2 - j1;
       if (k1 !== k2 && j1 !== j2) {
         vertices = [];
-        fn2 = function(k) {
-          var j, ref2, ref3, results, t;
+        fn4 = function(k) {
+          var j, ref3, ref4, results, v;
           results = [];
-          for (j = t = ref2 = j1, ref3 = j2; ref2 <= ref3 ? t <= ref3 : t >= ref3; j = ref2 <= ref3 ? ++t : --t) {
+          for (j = v = ref3 = j1, ref4 = j2; ref3 <= ref4 ? v <= ref4 : v >= ref4; j = ref3 <= ref4 ? ++v : --v) {
             results.push((function(j) {
               return vertices.push(vec(k, j, i));
             })(j));
           }
           return results;
         };
-        for (k = q = ref = k1, ref1 = k2; ref <= ref1 ? q <= ref1 : q >= ref1; k = ref <= ref1 ? ++q : --q) {
-          fn2(k);
+        for (k = u = ref1 = k1, ref2 = k2; ref1 <= ref2 ? u <= ref2 : u >= ref2; k = ref1 <= ref2 ? ++u : --u) {
+          fn4(k);
         }
         faces = [];
         faces_internal = [];
-        fn3 = function(k) {
-          var j, ref3, results, u;
+        fn5 = function(k) {
+          var j, ref4, results, w;
           results = [];
-          for (j = u = 0, ref3 = j_index_size - 1; 0 <= ref3 ? u <= ref3 : u >= ref3; j = 0 <= ref3 ? ++u : --u) {
+          for (j = w = 0, ref4 = j_index_size - 1; 0 <= ref4 ? w <= ref4 : w >= ref4; j = 0 <= ref4 ? ++w : --w) {
             results.push((function(j) {
               var a, b, face_0, face_1, j0, k0;
               a = (j_index_size + 1) * k + j;
               b = (j_index_size + 1) * (k + 1) + j;
               face_0 = get_face_0(a, b);
               face_1 = get_face_1(a, b);
-              if ((filter_internal && i >= filter[2][0] && i <= filter[2][1]) || filter_scalar.length) {
+              if ((filter_internal && i >= filter[2][0] && i <= filter[2][1]) || filter_cells) {
                 k0 = k + k1;
                 j0 = j + j1;
                 if (internal_area(2, k0, j0, i)) {
-                  if (filter_scalar.length || (indexOf.call(i_lst_filter, i) >= 0)) {
+                  if (filter_cells || (indexOf.call(i_lst_filter, i) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (filter_scalar.length || (indexOf.call(i_lst_main, i) >= 0)) {
+                } else if (filter_cells || (indexOf.call(i_lst_main, i) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -1044,60 +1154,60 @@
           }
           return results;
         };
-        for (k = t = 0, ref2 = k_index_size - 1; 0 <= ref2 ? t <= ref2 : t >= ref2; k = 0 <= ref2 ? ++t : --t) {
-          fn3(k);
+        for (k = v = 0, ref3 = k_index_size - 1; 0 <= ref3 ? v <= ref3 : v >= ref3; k = 0 <= ref3 ? ++v : --v) {
+          fn5(k);
         }
         if (faces.length > 0 && directions[2] && (directions[3] || i_index === 0 || i_index === i_lst_front.length - 1)) {
           add_surface(vertices, scale_coeff, faces, materials[2], 2);
         }
-        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[2] && (filter_directions[3] || i === i_lst_filter[0] || i === i_lst_filter[i_lst_filter.length - 1])) {
+        if ((filter_internal || filter_cells) && faces_internal.length > 0 && filter_directions[2] && (filter_directions[3] || i === i_lst_filter[0] || i === i_lst_filter[i_lst_filter.length - 1])) {
           return add_surface(vertices, scale_coeff, faces_internal, filter_materials[2], 5);
         }
       }
     };
     j_part = function(dir, j_index, k1, k2) {
-      var aa, ab, ac, faces, faces_internal, fn2, fn3, fn4, fn5, fn6, fn7, fn8, fn9, get_face_0, get_face_1, i_index, j, j1, j2, k, k_index_size, len, len1, len2, len3, len4, len5, len6, len7, q, ref, ref1, ref2, results, results1, t, u, v, vertices, w, y, z;
+      var aa, ab, ac, ad, ae, faces, faces_internal, fn10, fn11, fn4, fn5, fn6, fn7, fn8, fn9, get_face_0, get_face_1, i_index, j, j1, j2, k, k_index_size, len1, len2, len3, len4, len5, len6, len7, len8, ref1, ref2, ref3, results, results1, u, v, vertices, w, y, z;
       if (dir !== 0) {
         if (j_index > 0) {
           j1 = j_lst_front[j_index - 1];
           j2 = j_lst_front[j_index];
           if (j_index >= j_lst_front.length / 2) {
-            fn2 = function(i) {
+            fn4 = function(i) {
               if (i_index >= i_lst_front.length / 2) {
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = q = 0, len = i_lst_front.length; q < len; i_index = ++q) {
-              i = i_lst_front[i_index];
-              fn2(i);
-            }
-            fn3 = function(i) {
-              if (i_index > i_lst_front.length / 2) {
-                return i_part(0, i_index, k1, k2, j1, j2);
-              }
-            };
-            for (i_index = t = 0, len1 = i_lst_back.length; t < len1; i_index = ++t) {
-              i = i_lst_back[i_index];
-              fn3(i);
-            }
-          } else {
-            fn4 = function(i) {
-              if (i_index < i_lst_front.length / 2) {
-                return i_part(1, i_index, k1, k2, j1, j2);
-              }
-            };
-            for (i_index = u = 0, len2 = i_lst_front.length; u < len2; i_index = ++u) {
+            for (i_index = u = 0, len1 = i_lst_front.length; u < len1; i_index = ++u) {
               i = i_lst_front[i_index];
               fn4(i);
             }
             fn5 = function(i) {
+              if (i_index > i_lst_front.length / 2) {
+                return i_part(0, i_index, k1, k2, j1, j2);
+              }
+            };
+            for (i_index = v = 0, len2 = i_lst_back.length; v < len2; i_index = ++v) {
+              i = i_lst_back[i_index];
+              fn5(i);
+            }
+          } else {
+            fn6 = function(i) {
+              if (i_index < i_lst_front.length / 2) {
+                return i_part(1, i_index, k1, k2, j1, j2);
+              }
+            };
+            for (i_index = w = 0, len3 = i_lst_front.length; w < len3; i_index = ++w) {
+              i = i_lst_front[i_index];
+              fn6(i);
+            }
+            fn7 = function(i) {
               if (i_index <= i_lst_front.length / 2) {
                 return i_part(0, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = v = 0, len3 = i_lst_back.length; v < len3; i_index = ++v) {
+            for (i_index = y = 0, len4 = i_lst_back.length; y < len4; i_index = ++y) {
               i = i_lst_back[i_index];
-              fn5(i);
+              fn7(i);
             }
           }
         }
@@ -1121,38 +1231,38 @@
       k_index_size = k2 - k1;
       if (k1 !== k2 && i_first !== i_last) {
         vertices = [];
-        fn6 = function(k) {
-          var ref2, ref3, results, y;
+        fn8 = function(k) {
+          var aa, ref3, ref4, results;
           results = [];
-          for (i = y = ref2 = i_first, ref3 = i_last; ref2 <= ref3 ? y <= ref3 : y >= ref3; i = ref2 <= ref3 ? ++y : --y) {
+          for (i = aa = ref3 = i_first, ref4 = i_last; ref3 <= ref4 ? aa <= ref4 : aa >= ref4; i = ref3 <= ref4 ? ++aa : --aa) {
             results.push((function(i) {
               return vertices.push(vec(k, j, i));
             })(i));
           }
           return results;
         };
-        for (k = w = ref = k1, ref1 = k2; ref <= ref1 ? w <= ref1 : w >= ref1; k = ref <= ref1 ? ++w : --w) {
-          fn6(k);
+        for (k = z = ref1 = k1, ref2 = k2; ref1 <= ref2 ? z <= ref2 : z >= ref2; k = ref1 <= ref2 ? ++z : --z) {
+          fn8(k);
         }
         faces = [];
         faces_internal = [];
-        fn7 = function(k) {
-          var ref3, results, z;
+        fn9 = function(k) {
+          var ab, ref4, results;
           results = [];
-          for (i = z = 0, ref3 = i_size - 1; 0 <= ref3 ? z <= ref3 : z >= ref3; i = 0 <= ref3 ? ++z : --z) {
+          for (i = ab = 0, ref4 = i_size - 1; 0 <= ref4 ? ab <= ref4 : ab >= ref4; i = 0 <= ref4 ? ++ab : --ab) {
             results.push((function(i) {
               var a, b, face_0, face_1, k0;
               a = (i_size + 1) * k + i;
               b = (i_size + 1) * (k + 1) + i;
               face_0 = get_face_0(a, b);
               face_1 = get_face_1(a, b);
-              if (filter_internal && j >= filter[1][0] && j <= filter[1][1] || filter_scalar.length) {
+              if (filter_internal && j >= filter[1][0] && j <= filter[1][1] || filter_cells) {
                 k0 = k + k1;
                 if (internal_area(1, k0, j, i)) {
-                  if (filter_scalar.length || (indexOf.call(j_lst_filter, j) >= 0)) {
+                  if (filter_cells || (indexOf.call(j_lst_filter, j) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (filter_scalar.length || (indexOf.call(j_lst_main, j) >= 0)) {
+                } else if (filter_cells || (indexOf.call(j_lst_main, j) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -1162,13 +1272,13 @@
           }
           return results;
         };
-        for (k = y = 0, ref2 = k_index_size - 1; 0 <= ref2 ? y <= ref2 : y >= ref2; k = 0 <= ref2 ? ++y : --y) {
-          fn7(k);
+        for (k = aa = 0, ref3 = k_index_size - 1; 0 <= ref3 ? aa <= ref3 : aa >= ref3; k = 0 <= ref3 ? ++aa : --aa) {
+          fn9(k);
         }
         if (faces.length > 0 && directions[1] && (directions[3] || j_index === 0 || j_index === j_lst_front.length - 1)) {
           add_surface(vertices, scale_coeff, faces, materials[1], 1);
         }
-        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[1] && (filter_directions[3] || j === j_lst_filter[0] || j === j_lst_filter[j_lst_filter.length - 1])) {
+        if ((filter_internal || filter_cells) && faces_internal.length > 0 && filter_directions[1] && (filter_directions[3] || j === j_lst_filter[0] || j === j_lst_filter[j_lst_filter.length - 1])) {
           add_surface(vertices, scale_coeff, faces_internal, filter_materials[1], 4);
         }
       }
@@ -1177,17 +1287,17 @@
           j1 = j_lst_front[j_index - 1];
           j2 = j_lst_front[j_index];
           if (j_index >= j_lst_front.length / 2) {
-            fn8 = function(i) {
+            fn10 = function(i) {
               if (i_index < i_lst_front.length / 2) {
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = z = 0, len4 = i_lst_front.length; z < len4; i_index = ++z) {
+            for (i_index = ab = 0, len5 = i_lst_front.length; ab < len5; i_index = ++ab) {
               i = i_lst_front[i_index];
-              fn8(i);
+              fn10(i);
             }
             results = [];
-            for (i_index = aa = 0, len5 = i_lst_back.length; aa < len5; i_index = ++aa) {
+            for (i_index = ac = 0, len6 = i_lst_back.length; ac < len6; i_index = ++ac) {
               i = i_lst_back[i_index];
               results.push((function(i) {
                 if (i_index <= i_lst_front.length / 2) {
@@ -1197,17 +1307,17 @@
             }
             return results;
           } else {
-            fn9 = function(i) {
+            fn11 = function(i) {
               if (i_index >= i_lst_front.length / 2) {
                 return i_part(1, i_index, k1, k2, j1, j2);
               }
             };
-            for (i_index = ab = 0, len6 = i_lst_front.length; ab < len6; i_index = ++ab) {
+            for (i_index = ad = 0, len7 = i_lst_front.length; ad < len7; i_index = ++ad) {
               i = i_lst_front[i_index];
-              fn9(i);
+              fn11(i);
             }
             results1 = [];
-            for (i_index = ac = 0, len7 = i_lst_back.length; ac < len7; i_index = ++ac) {
+            for (i_index = ae = 0, len8 = i_lst_back.length; ae < len8; i_index = ++ae) {
               i = i_lst_back[i_index];
               results1.push((function(i) {
                 if (i_index > i_lst_front.length / 2) {
@@ -1221,18 +1331,18 @@
       }
     };
     k_part = function(dir, k_index) {
-      var faces, faces_internal, fn2, fn3, fn4, get_face_0, get_face_1, j, j_index, k, k1, k2, len, len1, q, ref, ref1, ref2, results, t, u, v, vertices;
+      var faces, faces_internal, fn4, fn5, fn6, get_face_0, get_face_1, j, j_index, k, k1, k2, len1, len2, ref1, ref2, ref3, results, u, v, vertices, w, y;
       if (dir !== 0 && k_index > 0) {
         k1 = k_lst_front[k_index - 1];
         k2 = k_lst_front[k_index];
         if (k_index >= k_lst_front.length / 2) {
-          fn2 = function(j) {
+          fn4 = function(j) {
             j_part(0, j_lst_front.length - 1 - j_index, k1, k2);
             return j_part(1, j_index, k1, k2);
           };
-          for (j_index = q = 0, len = j_lst_front.length; q < len; j_index = ++q) {
+          for (j_index = u = 0, len1 = j_lst_front.length; u < len1; j_index = ++u) {
             j = j_lst_front[j_index];
-            fn2(j);
+            fn4(j);
           }
         }
       }
@@ -1254,37 +1364,37 @@
       }
       if (j_first !== j_last && i_first !== i_last) {
         vertices = [];
-        fn3 = function(j) {
-          var ref2, ref3, results, u;
+        fn5 = function(j) {
+          var ref3, ref4, results, w;
           results = [];
-          for (i = u = ref2 = i_first, ref3 = i_last; ref2 <= ref3 ? u <= ref3 : u >= ref3; i = ref2 <= ref3 ? ++u : --u) {
+          for (i = w = ref3 = i_first, ref4 = i_last; ref3 <= ref4 ? w <= ref4 : w >= ref4; i = ref3 <= ref4 ? ++w : --w) {
             results.push((function(i) {
               return vertices.push(vec(k, j, i));
             })(i));
           }
           return results;
         };
-        for (j = t = ref = j_first, ref1 = j_last; ref <= ref1 ? t <= ref1 : t >= ref1; j = ref <= ref1 ? ++t : --t) {
-          fn3(j);
+        for (j = v = ref1 = j_first, ref2 = j_last; ref1 <= ref2 ? v <= ref2 : v >= ref2; j = ref1 <= ref2 ? ++v : --v) {
+          fn5(j);
         }
         faces = [];
         faces_internal = [];
-        fn4 = function(j) {
-          var ref3, results, v;
+        fn6 = function(j) {
+          var ref4, results, y;
           results = [];
-          for (i = v = 0, ref3 = i_size - 1; 0 <= ref3 ? v <= ref3 : v >= ref3; i = 0 <= ref3 ? ++v : --v) {
+          for (i = y = 0, ref4 = i_size - 1; 0 <= ref4 ? y <= ref4 : y >= ref4; i = 0 <= ref4 ? ++y : --y) {
             results.push((function(i) {
               var a, b, face_0, face_1;
               a = (i_size + 1) * j + i;
               b = (i_size + 1) * (j + 1) + i;
               face_0 = get_face_0(a, b);
               face_1 = get_face_1(a, b);
-              if (filter_internal && k >= filter[0][0] && k <= filter[0][1] || filter_scalar.length) {
+              if (filter_internal && k >= filter[0][0] && k <= filter[0][1] || filter_cells) {
                 if (internal_area(0, k, j, i)) {
-                  if (filter_scalar.length || (indexOf.call(k_lst_filter, k) >= 0)) {
+                  if (filter_cells || (indexOf.call(k_lst_filter, k) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (filter_scalar.length || (indexOf.call(k_lst_main, k) >= 0)) {
+                } else if (filter_cells || (indexOf.call(k_lst_main, k) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -1294,13 +1404,13 @@
           }
           return results;
         };
-        for (j = u = 0, ref2 = j_size - 1; 0 <= ref2 ? u <= ref2 : u >= ref2; j = 0 <= ref2 ? ++u : --u) {
-          fn4(j);
+        for (j = w = 0, ref3 = j_size - 1; 0 <= ref3 ? w <= ref3 : w >= ref3; j = 0 <= ref3 ? ++w : --w) {
+          fn6(j);
         }
         if (faces.length > 0 && directions[0] && (directions[3] || k_index === 0 || k_index === k_lst_front.length - 1)) {
           add_surface(vertices, scale_coeff, faces, materials[0], 0);
         }
-        if ((filter_internal || filter_scalar.length) && faces_internal.length > 0 && filter_directions[0] && (filter_directions[3] || k === k_lst_filter[0] || k === k_lst_filter[k_lst_filter.length - 1])) {
+        if ((filter_internal || filter_cells) && faces_internal.length > 0 && filter_directions[0] && (filter_directions[3] || k === k_lst_filter[0] || k === k_lst_filter[k_lst_filter.length - 1])) {
           add_surface(vertices, scale_coeff, faces_internal, filter_materials[0], 3);
         }
       }
@@ -1309,7 +1419,7 @@
         k2 = k_lst_front[k_index];
         if (k_index < k_lst_front.length / 2) {
           results = [];
-          for (j_index = v = 0, len1 = j_lst_front.length; v < len1; j_index = ++v) {
+          for (j_index = y = 0, len2 = j_lst_front.length; y < len2; j_index = ++y) {
             j = j_lst_front[j_index];
             results.push((function(j) {
               j_part(0, j_lst_front.length - 1 - j_index, k1, k2);
@@ -1321,7 +1431,7 @@
       }
     };
     results = [];
-    for (k_index = q = 0, len = k_lst_front.length; q < len; k_index = ++q) {
+    for (k_index = u = 0, len1 = k_lst_front.length; u < len1; k_index = ++u) {
       k = k_lst_front[k_index];
       results.push((function(k) {
         k_part(1, k_index);
@@ -1389,8 +1499,8 @@
   };
 
   root.GridLines = {
-    init: function(data, scale_coeff, detail, directions, materials, colors, options, filter, filter_directions, filter_materials, filter_colors, filter_options, filter_scalar) {
-      var borders, d, filter_d, filtered, fn, fn1, get_segment, i, n, o;
+    init: function(data, scale_coeff, detail, directions, materials, colors, options, filter, filter_directions, filter_materials, filter_colors, filter_options, filter_scalar, filter_list) {
+      var borders, d, filter_d, filtered, fn, fn1, fn2, fn3, get_segment, i, ind, len, mask, n, o, q, ref, t, x, xk;
       root.lines_seg = new THREE.Object3D();
       root.lines = new THREE.Object3D();
       root.k_last = data.length - 1;
@@ -1475,32 +1585,134 @@
           if (i + 1 === i_last) {
             ci_lst.push(1);
           }
-          fn2 = function(ck) {
-            var cj, len1, results, t;
-            results = [];
-            for (t = 0, len1 = cj_lst.length; t < len1; t++) {
-              cj = cj_lst[t];
-              results.push((function(cj) {
-                var ci, len2, results1, u;
-                results1 = [];
-                for (u = 0, len2 = ci_lst.length; u < len2; u++) {
-                  ci = ci_lst[u];
-                  results1.push((function(ci) {
-                    var value;
-                    value = data[k + ck][j + cj][i + ci][scalar];
-                    if (value >= filter_scalar[1][0] && value <= filter_scalar[1][1]) {
-                      return res = true;
+          if (!res) {
+            fn2 = function(ck) {
+              var cj, len1, results, t;
+              if (!res) {
+                results = [];
+                for (t = 0, len1 = cj_lst.length; t < len1; t++) {
+                  cj = cj_lst[t];
+                  results.push((function(cj) {
+                    var ci, len2, results1, u;
+                    if (!res) {
+                      results1 = [];
+                      for (u = 0, len2 = ci_lst.length; u < len2; u++) {
+                        ci = ci_lst[u];
+                        results1.push((function(ci) {
+                          var value;
+                          value = data[k + ck][j + cj][i + ci][scalar];
+                          if (value >= filter_scalar[1][0] && value <= filter_scalar[1][1]) {
+                            return res = true;
+                          }
+                        })(ci));
+                      }
+                      return results1;
                     }
-                  })(ci));
+                  })(cj));
                 }
-                return results1;
-              })(cj));
+                return results;
+              }
+            };
+            for (q = 0, len = ck_lst.length; q < len; q++) {
+              ck = ck_lst[q];
+              fn2(ck);
+            }
+          }
+          return res;
+        };
+        filter_d = d;
+        borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
+      } else if (filter_list.length) {
+        mask = (function() {
+          var q, ref, results;
+          results = [];
+          for (x = q = 0, ref = data.length; 0 <= ref ? q < ref : q > ref; x = 0 <= ref ? ++q : --q) {
+            results.push([]);
+          }
+          return results;
+        })();
+        fn2 = function(xk) {
+          var ref1, results, t, xj;
+          mask[xk] = (function() {
+            var ref1, results, t;
+            results = [];
+            for (x = t = 0, ref1 = data[0].length; 0 <= ref1 ? t < ref1 : t > ref1; x = 0 <= ref1 ? ++t : --t) {
+              results.push([]);
             }
             return results;
-          };
-          for (q = 0, len = ck_lst.length; q < len; q++) {
-            ck = ck_lst[q];
-            fn2(ck);
+          })();
+          results = [];
+          for (xj = t = 0, ref1 = data[0].length; 0 <= ref1 ? t < ref1 : t > ref1; xj = 0 <= ref1 ? ++t : --t) {
+            results.push((function(xj) {
+              return mask[xk][xj] = (function() {
+                var ref2, results1, u;
+                results1 = [];
+                for (u = 0, ref2 = data[0][0].length; 0 <= ref2 ? u < ref2 : u > ref2; 0 <= ref2 ? u++ : u--) {
+                  results1.push(false);
+                }
+                return results1;
+              })();
+            })(xj));
+          }
+          return results;
+        };
+        for (xk = q = 0, ref = data.length; 0 <= ref ? q < ref : q > ref; xk = 0 <= ref ? ++q : --q) {
+          fn2(xk);
+        }
+        fn3 = function(ind) {
+          if (ind.length && mask.length > ind[2] && mask[ind[2]].length > ind[1] && mask[ind[2]][ind[1]].length > ind[0]) {
+            return mask[ind[2]][ind[1]][ind[0]] = true;
+          }
+        };
+        for (t = 0, len = filter_list.length; t < len; t++) {
+          ind = filter_list[t];
+          fn3(ind);
+        }
+        filtered = function(k, j, i) {
+          var ci_lst, cj_lst, ck, ck_lst, fn4, len1, res, u;
+          res = false;
+          ck_lst = k > 0 ? [-1, 0] : [0];
+          cj_lst = j > 0 ? [-1, 0] : [0];
+          ci_lst = i > 0 ? [-1, 0] : [0];
+          if (k + 1 === k_last) {
+            ck_lst.push(1);
+          }
+          if (j + 1 === j_last) {
+            cj_lst.push(1);
+          }
+          if (i + 1 === i_last) {
+            ci_lst.push(1);
+          }
+          if (!res) {
+            fn4 = function(ck) {
+              var cj, len2, results, v;
+              if (!res) {
+                results = [];
+                for (v = 0, len2 = cj_lst.length; v < len2; v++) {
+                  cj = cj_lst[v];
+                  results.push((function(cj) {
+                    var ci, len3, results1, w;
+                    if (!res) {
+                      results1 = [];
+                      for (w = 0, len3 = ci_lst.length; w < len3; w++) {
+                        ci = ci_lst[w];
+                        results1.push((function(ci) {
+                          if (mask[k + ck][j + cj][i + ci]) {
+                            return res = true;
+                          }
+                        })(ci));
+                      }
+                      return results1;
+                    }
+                  })(cj));
+                }
+                return results;
+              }
+            };
+            for (u = 0, len1 = ck_lst.length; u < len1; u++) {
+              ck = ck_lst[u];
+              fn4(ck);
+            }
           }
           return res;
         };
@@ -1533,7 +1745,7 @@
   };
 
   root.GridFaces = {
-    init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar) {
+    init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar, filter_list) {
       var n1, n2, n3;
       root.faces = new THREE.Object3D();
       if (directions.length < 3) {
@@ -1542,7 +1754,7 @@
       if (filter_directions.length < 3) {
         filter_directions = [true, true, true, true];
       }
-      if (filter.length === 0 && filter_scalar.length === 0) {
+      if (filter.length === 0 && filter_scalar.length === 0 && filter_list.length === 0) {
         gen_surfaces(data, scale_coeff, detail, directions, materials);
       } else if (filter.length > 2) {
         n1 = filter[0][0] !== filter[0][1] ? true : false;
@@ -1556,7 +1768,7 @@
           }
         }
       } else {
-        gen_surfaces(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar);
+        gen_surfaces(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar, filter_list);
       }
       return root.faces;
     }

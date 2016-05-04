@@ -66,7 +66,7 @@ SceneObjectThreeJs
 		}
     }
 
-    onDataChanged: makeLater(this);
+    onColorsChanged: makeLater(this);
 
     onVariableChanged: makeLater(this);
 
