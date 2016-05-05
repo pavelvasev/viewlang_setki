@@ -11,10 +11,20 @@ Item
 
 	property var status: 0
 
-	property var q: load()
+	onFilesChanged: { 
+	  console.log( "@@@@@@@@@@@@@@@@@ onFilesChanged => reloadTimer.start();" );
+	  console.trace();
+	  reloadTimer.start();
+	}
+
+	Timer {
+	  id: reloadTimer
+	  interval: 250 // ms
+	  onTriggered: load()
+	}
 
 	function load() {
-
+	  console.log( "@@@@@@@@@@@@@@@@@ Load::load(), files=",files );
 		status = 0;
 
 		var blocks = [];
