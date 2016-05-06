@@ -10,6 +10,7 @@ Scene
 	property var script_lib_flag_1: false
 	property var script_lib_flag_2: false
 	property var script_lib_flag_3: false
+	property var script_styles_flag: false
 
 	property var redef_flag: false
 
@@ -34,7 +35,12 @@ Scene
 						this.onResize();
 					}
 
-					script_gui_flag = true; 
+					if ( !script_gui_flag && !script_styles_flag )
+						la_require( 
+							$basePath + "js/styles.js", 
+							function(){ script_styles_flag = true; });
+
+					script_gui_flag = true;
 				});
 
 		if( !script_lib_flag_1 )
@@ -109,6 +115,8 @@ Scene
 			data_counter = 0;
 			data_controls = {};
 			url_files = [];
+
+			inputFile.children[0].children[2].y = 90;
 		}
 	}
 
@@ -526,32 +534,32 @@ Scene
 
 				grid.controls["Axis"] = true;
 				
-				grid.controls["x"] = "X";
-				grid.controls["y"] = "Y";
-				grid.controls["z"] = "Z";
+				grid.controls["X"] = "X";
+				grid.controls["Y"] = "Y";
+				grid.controls["Z"] = "Z";
 				
-				grid.controls["font"] = "Normal 14pt Arial";
+				grid.controls["Font"] = "Normal 14pt Arial";
 
-				grid.controls["background"] = '#eeeeee';
+				grid.controls["Background"] = '#eeeeee';
 
 				f_caption.add(grid.controls, "About");
 
 				f_caption.add(grid.controls, "Axis").onFinishChange(
 					function(value){ axis.visible = value; });
 
-				f_caption.add(grid.controls, "x").onFinishChange(
+				f_caption.add(grid.controls, "X").onFinishChange(
 					function(value){ axis.x_text = value; });
 				
-				f_caption.add(grid.controls, "y").onFinishChange(
+				f_caption.add(grid.controls, "Y").onFinishChange(
 					function(value){ axis.y_text = value; });
 
-				f_caption.add(grid.controls, "z").onFinishChange(
+				f_caption.add(grid.controls, "Z").onFinishChange(
 					function(value){ axis.z_text = value; });
 
-				f_caption.add(grid.controls, "font").onFinishChange(
+				f_caption.add(grid.controls, "Font").onFinishChange(
 					function(value){ axis.font = value; });
 
-				f_caption.addColor(grid.controls, "background").onChange(
+				f_caption.addColor(grid.controls, "Background").onChange(
 					function(value){
 						renderer.setClearColor( 
 							parseInt(value.substring(1), 16), 1 );
@@ -744,9 +752,9 @@ Scene
 
 			property var option_visible: true
 			property var option_detail: [
-					Math.floor(loader.grid[ index ].length / 30) + 1,
-					Math.floor(loader.grid[ index ][0].length / 30) + 1,
-					Math.floor(loader.grid[ index ][0][0].length / 30) + 1
+					Math.floor(loader.grid[ index ].length / 35) + 1,
+					Math.floor(loader.grid[ index ][0].length / 35) + 1,
+					Math.floor(loader.grid[ index ][0][0].length / 35) + 1
 				]
 
 			function filter_upd(value)
@@ -1158,7 +1166,7 @@ Scene
 					d[0].toString() + ")";
 
 				for (var i = 0; i < 3; i++) 
-					d[i] = Math.floor(d[i] / 30) + 1;
+					d[i] = Math.floor(d[i] / 35) + 1;
 
 				grid.d_controls[ name ] = "di = " +
 					d[2].toString() + ", dj = " + 
@@ -1680,6 +1688,7 @@ Scene
 
 		Text
 		{
+
 			text: (grid.points_variable != "" && 
 					parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length && 
 					!!grid.point && grid.point.length > 3 &&
@@ -1687,7 +1696,7 @@ Scene
 			
 			function msg()
 			{
-				var m = '<span style="' + 
+				var m = '<br/><br/><span style="' + 
 				'font-size: 120%; color: white; background-color: rgba(0, 0, 0, 0.7);">' + 
 				"&nbsp;Selected: ";
 
@@ -1713,7 +1722,7 @@ Scene
 						"&nbsp;[&nbsp;" + grid.point[i] + "&nbsp;];&nbsp;\n";
 				}
 
-				return m + "</span>" + "\n";
+				return m + "</span>";
 			}
 		}
 
@@ -1721,7 +1730,7 @@ Scene
 		{
 			text: (grid.points_variable != "" && 
 					parseInt(grid.points_variable) + 3 <= loader.grid[0][0][0][0].length )? 
-					"Points:": ""
+					"<br/><br/>Points:": ""
 		}
 
 		Column
