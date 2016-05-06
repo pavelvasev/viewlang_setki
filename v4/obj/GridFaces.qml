@@ -28,6 +28,8 @@ SceneObject
 
 	property var filter_list: []
 
+	property var faces_names: []
+
 	function make3d() {
 
 		if (!data) return; 
@@ -67,15 +69,18 @@ SceneObject
 					filter_materials[i] = tmp;
 			};
 
-			if (directions[0] || directions[1] || directions[2] || filter.length > 0 ||
-				filter_scalar.length > 0 || filter_list.length > 0)
+			if (directions[0] || directions[1] || directions[2] || 
+				filter.length > 0 || filter_scalar.length > 0 || filter_list.length > 0)
 			{
-				this.sceneObject = GridFaces.init(
+				var ref = this.sceneObject = GridFaces.init(
 						data, scale_coeff, 
 						detail, directions, materials, 
 						filter, filter_directions, filter_materials, 
 						filter_scalar, filter_list
 					);
+
+				this.sceneObject = ref[0];
+				faces_names = ref[1];
 
 				scene.add(this.sceneObject);
 
@@ -97,54 +102,53 @@ SceneObject
 
 		var obj = this.sceneObject;
 
-		if (obj) {
+		if (obj && !!faces_names) {
 
 			if (directions[0] || directions[1] || directions[2]) {
 
-				for (var i = obj.children.length - 1; i >= 0; i--) {
+				for (var i = 0; i < faces_names.length; i++) {
 					
-					var item = obj.children[i];
-
-					var n = item.name;
-					var tmp = item.material;
+					var n = faces_names[i];
+					var tmp = obj.material.materials[i];
 
 					if (colors.length + filter_colors.length <= n) {
 						makeLater(this);
 						return;
 					}
 
-					if (filter.length < 3 && 
+					if (filter.length < 3 && !filter_scalar.length && !filter_list.length &&
 						(!directions[0] && !directions[1] && directions[2])) {
 						mat_colors = [colors[2], colors[0], colors[1]];
-					} else if (filter.length < 3 && directions[1] && (!directions[0])) {
+					} else if (filter.length < 3 && !filter_scalar.length && !filter_list.length 
+						&& directions[1] && (!directions[0])) {
 						mat_colors = [colors[1], colors[2], colors[0]];
 					} else { 
 						mat_colors = [colors[0], colors[1], colors[2]];
 					}
 
-					item.material = new THREE.MeshBasicMaterial({ 
+					obj.material.materials[i] = new THREE.MeshBasicMaterial({ 
 						color: (n < 3)? mat_colors[n]: filter_colors[n - 3], 
 						side: THREE.FrontSide, transparent: true,
 						opacity: (n < 3)? options[0]: filter_options[0]
 					} );
 
 					if (tmp) tmp.dispose();
+
 				}
+
 			} else {
 
-				for (var i = obj.children.length - 1; i >= 0; i--) {
-					
-					var item = obj.children[i];
+				for (var i = 0; i < faces_names.length; i++) {
 
-					var n = item.name;
-					var tmp = item.material;
+					var n = faces_names[i];
+					var tmp = obj.material.materials[i];
 
 					if (filter_colors.length <= n) {
 						makeLater(this);
 						return;
 					}
 
-					item.material = new THREE.MeshBasicMaterial({ 
+					obj.material.materials[i] = new THREE.MeshBasicMaterial({ 
 						color: filter_colors[n], 
 						side: THREE.FrontSide, transparent: true,
 						opacity: filter_options[0]
@@ -192,8 +196,10 @@ SceneObject
 
 			scene.remove( obj );
 			if (obj.geometry) obj.geometry.dispose();
-			if (obj.material) obj.material.dispose();
-			if (obj.texture) obj.texture.dispose();
+
+			for (var i = 0; i < obj.material.materials.length; i++)
+				if (obj.material.materials[i])
+					obj.material.materials[i].dispose();
 
 			obj = undefined;
 		}

@@ -780,7 +780,7 @@
     k_first = 0;
     j_first = 0;
     i_first = 0;
-    if (filter.length < 3 && (!dir[0] && !dir[1] && dir[2])) {
+    if (filter.length < 3 && !filter_scalar.length && !filter_list.length && (!dir[0] && !dir[1] && dir[2])) {
       vec = function(k, j, i) {
         return new THREE.Vector3(data[j][i][k][0], data[j][i][k][1], data[j][i][k][2]);
       };
@@ -790,7 +790,7 @@
       k_last = data[0][0].length - 1;
       j_last = data.length - 1;
       i_last = data[0].length - 1;
-    } else if (filter.length < 3 && ((!dir[0] && dir[1] && !dir[2]) || (!dir[0] && dir[1] && dir[2]))) {
+    } else if (filter.length < 3 && !filter_scalar.length && !filter_list.length && ((!dir[0] && dir[1] && !dir[2]) || (!dir[0] && dir[1] && dir[2]))) {
       vec = function(k, j, i) {
         return new THREE.Vector3(data[i][k][j][0], data[i][k][j][1], data[i][k][j][2]);
       };
@@ -1490,12 +1490,15 @@
     geometry.vertices = vertices;
     geometry.faces = faces;
     geometry.computeBoundingSphere();
-    sceneObject = new THREE.Mesh(geometry, material);
+    sceneObject = new THREE.Mesh(geometry);
     sceneObject.name = name;
     sceneObject.scale.x = scale_coeff;
     sceneObject.scale.y = scale_coeff;
     sceneObject.scale.z = scale_coeff;
-    return root.faces.add(sceneObject);
+    sceneObject.updateMatrix();
+    root.faces_materials.push(material);
+    root.faces_names.push(name);
+    return root.faces_geometry.merge(sceneObject.geometry, sceneObject.matrix, root.faces_materials.length - 1);
   };
 
   root.GridLines = {
@@ -1747,7 +1750,9 @@
   root.GridFaces = {
     init: function(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar, filter_list) {
       var n1, n2, n3;
-      root.faces = new THREE.Object3D();
+      root.faces_geometry = new THREE.Geometry();
+      root.faces_materials = [];
+      root.faces_names = [];
       if (directions.length < 3) {
         directions = [false, false, false, false];
       }
@@ -1770,7 +1775,8 @@
       } else {
         gen_surfaces(data, scale_coeff, detail, directions, materials, filter, filter_directions, filter_materials, filter_scalar, filter_list);
       }
-      return root.faces;
+      root.faces = new THREE.Mesh(root.faces_geometry, new THREE.MeshFaceMaterial(root.faces_materials));
+      return [root.faces, root.faces_names];
     }
   };
 

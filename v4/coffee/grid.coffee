@@ -653,7 +653,8 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 	j_first = 0
 	i_first = 0
 
-	if filter.length < 3 and (!dir[0] and !dir[1] and dir[2])
+	if filter.length < 3 and not filter_scalar.length and not filter_list.length and \
+	(!dir[0] and !dir[1] and dir[2])
 		vec = (k, j, i) -> 
 			new THREE.Vector3(data[j][i][k][0], data[j][i][k][1], data[j][i][k][2])
 
@@ -665,7 +666,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 		j_last = data.length - 1
 		i_last = data[0].length - 1	
 
-	else if filter.length < 3 and 
+	else if filter.length < 3 and not filter_scalar.length and not filter_list.length and \
 	((!dir[0] and dir[1] and !dir[2]) or (!dir[0] and dir[1] and dir[2]))
 		vec = (k, j, i) -> 
 			new THREE.Vector3(data[i][k][j][0], data[i][k][j][1], data[i][k][j][2])
@@ -689,7 +690,6 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 		k_last = data.length - 1
 		j_last = data[0].length - 1
 		i_last = data[0][0].length - 1
-	
 
 	get_segment = (l, r, step) ->
 		lst = []
@@ -1191,7 +1191,7 @@ root.add_surface = (vertices, scale_coeff, faces, material, name) ->
 
 	geometry.computeBoundingSphere()
 
-	sceneObject = new THREE.Mesh(geometry, material)
+	sceneObject = new THREE.Mesh(geometry)
 
 	sceneObject.name = name
 
@@ -1199,7 +1199,13 @@ root.add_surface = (vertices, scale_coeff, faces, material, name) ->
 	sceneObject.scale.y = scale_coeff
 	sceneObject.scale.z = scale_coeff
 
-	root.faces.add( sceneObject )
+	sceneObject.updateMatrix()
+
+	root.faces_materials.push(material)
+	root.faces_names.push(name)
+
+	root.faces_geometry.merge(sceneObject.geometry, sceneObject.matrix, 
+		root.faces_materials.length - 1)
 
 root.GridLines =
 
@@ -1390,7 +1396,10 @@ root.GridFaces =
 	init: (data, scale_coeff, detail, directions, materials, 
 		filter, filter_directions, filter_materials, filter_scalar, filter_list) ->
 
-		root.faces = new THREE.Object3D()
+		root.faces_geometry = new THREE.Geometry()
+
+		root.faces_materials = []
+		root.faces_names = []
 
 		if directions.length < 3
 			directions = [false, false, false, false]
@@ -1423,7 +1432,11 @@ root.GridFaces =
 				filter, filter_directions, filter_materials, 
 				filter_scalar, filter_list)
 
-		root.faces
+
+		root.faces = new THREE.Mesh(root.faces_geometry, new THREE.MeshFaceMaterial(
+			root.faces_materials))
+
+		[root.faces, root.faces_names]
 
 root.GridPoints = 
 	init: (data, scale_coeff, variable, min, max, index, color, radius, options, types) ->
