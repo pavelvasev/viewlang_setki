@@ -381,7 +381,7 @@ Scene
 		{
 			if ( script_gui_flag && script_lib_flag_1 && script_lib_flag_2 )
 			{
-				gui = new dat.GUI( { width: 350 } );
+				gui = new dat.GUI( { width: 450 } );
 
 				f_caption = gui.addFolder('Scene');
 
@@ -1143,6 +1143,9 @@ Scene
 					data_controls = {};
 
 					block.option_visible = true;
+
+					grid.filter_scalar = -1;
+					grid.filter_list = [];
 				}
 
 				var name = "#" + (block.z + 1).toString() + 
@@ -1208,18 +1211,42 @@ Scene
 						c.onFinishChange(item[1]);
 						grid.id_controls.push([grid.f_detail, c]);
 					}
-
-					data_controls = {};
 					
-					grid.controls["all points"] = function() {
-						for ( var i = 0; i < grid['$items'].length; i++ )
-							grid['$items'][i].option_detail = [1, 1, 1];
+					grid.controls["min/max step"] = function() {
+						var f = false;
 
-						for ( k in grid.d_controls )
-							grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
+						for ( var i = 0; i < grid['$items'].length; i++ )
+							for ( var j = 0; j < 3; j++ )
+								if (grid['$items'][i].option_detail[j] != 1)
+									f = true;
+						if (f) {
+
+							for ( var i = 0; i < grid['$items'].length; i++ )
+								grid['$items'][i].option_detail = [1, 1, 1];
+
+							for ( k in grid.d_controls )
+								grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
+
+						} else {
+							for ( var i = 0; i < grid['$items'].length; i++ ) {
+								var index = grid['$items'][i].z;
+
+								var d_k = loader.grid[ index ].length;
+								var d_j = loader.grid[ index ][0].length;
+								var d_i = loader.grid[ index ][0][0].length;
+
+								grid['$items'][i].option_detail = [d_k, d_j, d_i];
+
+								grid.d_controls[data_controls[index][1][0]] = 
+									'di = ' + d_i.toString() + ', ' +
+									'dj = ' + d_j.toString() + ', ' +
+									'dk = ' + d_k.toString();
+							}
+
+						}
 					};
 
-					var c = grid.f_detail.add(grid.controls, "all points");
+					var c = grid.f_detail.add(grid.controls, "min/max step");
 
 					grid.id_controls.push([grid.f_detail, c]);
 
@@ -1415,6 +1442,9 @@ Scene
 							ch != 'л' && ch != 'Л' && ch != 'о' && ch != 'О' &&
 							ch != 'ш' && ch != 'Ш' && ch != 'и' && ch != 'И')
 							return;
+
+						grid.filter_scalar = -1;
+						grid.filter_list = [];
 
 						if (grid.filter_block < 0)
 						{
@@ -2141,9 +2171,9 @@ Scene
 					"\t<b>b</b>, <b>B</b>, <b>i</b>, <b>I</b>, <b>j</b>, <b>J</b>, " +
 					"<b>k</b>, <b>K</b>\n" +
 					"Select point: <b>double click</b>\n" +
-					"Hide menu: <b>Ctrl + Q</b>, <b>H</b>\n\n" +
+					"Hide menu: <b>Ctrl + Q</b>, <b>h</b>\n\n" +
 					"Repository: <a href=\"https://github.com/olga3n/viewlang_setki\">" + 
-					"github</a>\n" +
+					"GitHub</a>\n" +
 					"</pre>";
 			}
 		}

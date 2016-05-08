@@ -6,7 +6,7 @@
   root = typeof exports !== "undefined" && exports !== null ? exports : this;
 
   root.gen_lines = function(data, scale_coeff, detail, directions, materials, borders, dashed, filtered, filter_detail, filter_directions, filter_materials, filter_dashed) {
-    var add_seg, border_color, border_line, border_material, border_points, calc_material, coeff, filter_border_color, filter_border_line, filter_border_material, filter_borders, filter_last_border_line, fn, fn1, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border_line, last_border_material, n, o, q, ref, ref1, ref2, ref3, ref4, results;
+    var add_seg, border_color, border_line, border_material, border_points, calc_material, coeff, filter_border_color, filter_border_line, filter_border_material, filter_borders, filter_last_border, filter_last_border_line, filter_last_border_material, fn, fn1, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border, last_border_line, last_border_material, n, o, q, ref, ref1, ref2, ref3, ref4, results;
     if (directions.length < 4) {
       directions = [true, true, true, true];
     }
@@ -93,7 +93,7 @@
           if (filter_border_line(dir, k, j, i)) {
             m = filter_border_material;
           } else {
-            mid = 0xff;
+            mid = 0x55;
             i_coeff = dir === 0 ? mid : (i - i_first) / i_size * 0xff;
             j_coeff = dir === 1 ? mid : (j - j_first) / j_size * 0xff;
             k_coeff = dir === 2 ? mid : (k - k_first) / k_size * 0xff;
@@ -118,11 +118,11 @@
           if (border_line(dir, k, j, i)) {
             m = border_material;
           } else {
-            mid = 0x55;
+            mid = 0x45;
             i_coeff = dir === 0 ? mid : (i - i_first) / i_size * 0xff;
             j_coeff = dir === 1 ? mid : (j - j_first) / j_size * 0xff;
             k_coeff = dir === 2 ? mid : (k - k_first) / k_size * 0xff;
-            color = (i_coeff << 16) + (k_coeff << 8) + j_coeff;
+            color = (i_coeff << 16) + (j_coeff << 8) + k_coeff;
             m = [
               new THREE.LineBasicMaterial({
                 color: color,
@@ -142,8 +142,20 @@
       }
       return m;
     };
+    last_border = 0x000000;
+    if (materials.length > 3) {
+      last_border = materials[3].color.getHex();
+    }
     last_border_material = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      color: last_border,
+      side: THREE.DoubleSide
+    });
+    filter_last_border = 0x0000ff;
+    if (filter_materials.length > 3) {
+      filter_last_border = filter_materials[3].color.getHex();
+    }
+    filter_last_border_material = new THREE.MeshBasicMaterial({
+      color: filter_last_border,
       side: THREE.DoubleSide
     });
     border_points = function(dir, a, b, x_seg, pnts, faces) {
@@ -229,7 +241,7 @@
                 for (var t = ref4 = borders[5][0], ref5 = borders[5][1]; ref4 <= ref5 ? t <= ref5 : t >= ref5; ref4 <= ref5 ? t++ : t--){ results2.push(t); }
                 return results2;
               }).apply(this), pnts, faces);
-              add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+              add_border_line(pnts, scale_coeff, faces, filter_last_border_material, 100500);
             }
             pnts = [];
             filter_pnts = [];
@@ -294,7 +306,7 @@
                 for (var u = ref5 = borders[4][0], ref6 = borders[4][1]; ref5 <= ref6 ? u <= ref6 : u >= ref6; ref5 <= ref6 ? u++ : u--){ results2.push(u); }
                 return results2;
               }).apply(this), pnts, faces);
-              add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+              add_border_line(pnts, scale_coeff, faces, filter_last_border_material, 100500);
             }
             pnts = [];
             filter_pnts = [];
@@ -361,7 +373,7 @@
                   for (var v = ref6 = borders[3][0], ref7 = borders[3][1]; ref6 <= ref7 ? v <= ref7 : v >= ref7; ref6 <= ref7 ? v++ : v--){ results3.push(v); }
                   return results3;
                 }).apply(this), pnts, faces);
-                add_border_line(pnts, scale_coeff, faces, last_border_material, 100500);
+                add_border_line(pnts, scale_coeff, faces, filter_last_border_material, 100500);
               }
               pnts = [];
               filter_pnts = [];
@@ -404,7 +416,7 @@
   };
 
   root.gen_lines_seg = function(data, scale_coeff, detail, directions, mat, borders, filtered, filter_detail, filter_directions, filter_mat, dashed) {
-    var add_seg, border_color, border_line, border_points, calc_color, coeff, convert_color, filter_border_color, filter_border_line, filter_borders, filter_last_border_line, filter_materials, fn, fn1, fn2, geometry, geometry_pnts, i, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border_line, last_border_material, material, materials, n, o, q, ref, ref1, ref2, ref3, ref4, sceneObject, seg_colors, t, u;
+    var add_seg, border_color, border_line, border_points, calc_color, coeff, convert_color, filter_border_color, filter_border_line, filter_borders, filter_last_border, filter_last_border_line, filter_last_border_material, filter_materials, fn, fn1, fn2, geometry, geometry_pnts, i, i_first, i_size, j, j_first, j_size, k, k_first, k_size, last_border, last_border_line, last_border_material, material, materials, n, o, q, ref, ref1, ref2, ref3, ref4, sceneObject, seg_colors, t, u;
     if (dashed == null) {
       dashed = false;
     }
@@ -478,15 +490,19 @@
     };
     materials = [];
     filter_materials = [];
+    last_border = "#000000";
     if (mat.length > 3) {
       for (i = n = 0; n <= 3; i = ++n) {
         materials.push(convert_color(mat[i]));
       }
+      last_border = mat[3];
     }
+    filter_last_border = "#0000ff";
     if (filter_mat.length > 3) {
       for (i = o = 0; o <= 3; i = ++o) {
         filter_materials.push(convert_color(filter_mat[i]));
       }
+      filter_last_border = filter_mat[3];
     }
     calc_color = function(dir, k, j, i, filter) {
       var color, i_coeff, j_coeff, k_coeff, mid;
@@ -499,7 +515,7 @@
           if (filter_border_line(dir, k, j, i)) {
             color = filter_border_color;
           } else {
-            mid = 1;
+            mid = 0x55 / 255;
             i_coeff = dir === 0 ? mid : (i - i_first) / i_size;
             j_coeff = dir === 1 ? mid : (j - j_first) / j_size;
             k_coeff = dir === 2 ? mid : (k - k_first) / k_size;
@@ -518,11 +534,11 @@
           if (border_line(dir, k, j, i)) {
             color = border_color;
           } else {
-            mid = 0x55 / 255;
+            mid = 0x45 / 255;
             i_coeff = dir === 0 ? mid : (i - i_first) / i_size;
             j_coeff = dir === 1 ? mid : (j - j_first) / j_size;
             k_coeff = dir === 2 ? mid : (k - k_first) / k_size;
-            color = [i_coeff, k_coeff, j_coeff];
+            color = [i_coeff, j_coeff, k_coeff];
           }
         } else {
           if (last_border_line(dir, k, j, i)) {
@@ -537,7 +553,11 @@
       return color;
     };
     last_border_material = new THREE.MeshBasicMaterial({
-      color: 0x000000,
+      color: parseInt(last_border.substring(1), 16),
+      side: THREE.DoubleSide
+    });
+    filter_last_border_material = new THREE.MeshBasicMaterial({
+      color: parseInt(filter_last_border.substring(1), 16),
       side: THREE.DoubleSide
     });
     border_points = function(dir, a, b, x_seg, pnts, faces) {
@@ -606,7 +626,7 @@
                 for (var v = ref4 = borders[5][0], ref5 = borders[5][1]; ref4 <= ref5 ? v <= ref5 : v >= ref5; ref4 <= ref5 ? v++ : v--){ results2.push(v); }
                 return results2;
               }).apply(this), pnts, faces);
-              add_border_line_seg(pnts, scale_coeff, faces, last_border_material, 100500);
+              add_border_line_seg(pnts, scale_coeff, faces, filter_last_border_material, 100500);
             }
             flag = -1;
             results3 = [];
@@ -656,7 +676,7 @@
                 for (var w = ref5 = borders[4][0], ref6 = borders[4][1]; ref5 <= ref6 ? w <= ref6 : w >= ref6; ref5 <= ref6 ? w++ : w--){ results2.push(w); }
                 return results2;
               }).apply(this), pnts, faces);
-              add_border_line_seg(pnts, scale_coeff, faces, last_border_material, 100500);
+              add_border_line_seg(pnts, scale_coeff, faces, filter_last_border_material, 100500);
             }
             flag = -1;
             results3 = [];
@@ -706,7 +726,7 @@
                 for (var y = ref6 = borders[3][0], ref7 = borders[3][1]; ref6 <= ref7 ? y <= ref7 : y >= ref7; ref6 <= ref7 ? y++ : y--){ results2.push(y); }
                 return results2;
               }).apply(this), pnts, faces);
-              add_border_line_seg(pnts, scale_coeff, faces, last_border_material, 100500);
+              add_border_line_seg(pnts, scale_coeff, faces, filter_last_border_material, 100500);
             }
             flag = -1;
             results3 = [];
