@@ -27,24 +27,6 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, das
 	filter_border_material = [ new THREE.LineBasicMaterial({ 
 		color: filter_border_color, linewidth: 1 }), coeff + 3 ]
 
-	last_border_line = (dir, k, j, i) ->
-		if dir == 0
-			r = if k in borders[0] and j in borders[1] then true else false
-		else if dir == 1
-			r = if k in borders[0] and i in borders[2] then true else false
-		else if dir == 2
-			r = if j in borders[1] and i in borders[2] then true else false
-		r
-
-	border_line = (dir, k, j, i) ->
-		if dir == 0
-			r = if k in borders[0] or j in borders[1] then true else false
-		else if dir == 1
-			r = if k in borders[0] or i in borders[2] then true else false
-		else if dir == 2
-			r = if j in borders[1] or i in borders[2] then true else false
-		r
-
 	if borders.length > 5
 		filter_last_border_line = (dir, k, j, i) ->
 			if dir == 0
@@ -65,6 +47,27 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, das
 			r = if k in filter_borders[0] or i in filter_borders[2] then true else false
 		else if dir == 2
 			r = if j in filter_borders[1] or i in filter_borders[2] then true else false
+		r
+
+	last_border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in borders[0] and j in borders[1] then true else false
+		else if dir == 1
+			r = if k in borders[0] and i in borders[2] then true else false
+		else if dir == 2
+			r = if j in borders[1] and i in borders[2] then true else false
+
+		r = if filter_last_border_line(dir, k, j, i) then false else r
+
+		r
+
+	border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in borders[0] or j in borders[1] then true else false
+		else if dir == 1
+			r = if k in borders[0] or i in borders[2] then true else false
+		else if dir == 2
+			r = if j in borders[1] or i in borders[2] then true else false
 		r
 
 	[k_first, j_first, i_first] = [0, 0, 0]
@@ -361,24 +364,6 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 
 	filter_border_color = [ 0, 0, 1 ]
 
-	last_border_line = (dir, k, j, i) ->
-		if dir == 0
-			r = if k in borders[0] and j in borders[1] then true else false
-		else if dir == 1
-			r = if k in borders[0] and i in borders[2] then true else false
-		else if dir == 2
-			r = if j in borders[1] and i in borders[2] then true else false
-		r
-
-	border_line = (dir, k, j, i) ->
-		if dir == 0
-			r = if k in borders[0] or j in borders[1] then true else false
-		else if dir == 1
-			r = if k in borders[0] or i in borders[2] then true else false
-		else if dir == 2
-			r = if j in borders[1] or i in borders[2] then true else false
-		r
-
 	if borders.length > 5
 		filter_last_border_line = (dir, k, j, i) ->
 			if dir == 0
@@ -399,6 +384,27 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 			r = if k in filter_borders[0] or i in filter_borders[2] then true else false
 		else if dir == 2
 			r = if j in filter_borders[1] or i in filter_borders[2] then true else false
+		r
+
+	last_border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in borders[0] and j in borders[1] then true else false
+		else if dir == 1
+			r = if k in borders[0] and i in borders[2] then true else false
+		else if dir == 2
+			r = if j in borders[1] and i in borders[2] then true else false
+
+		r = if filter_last_border_line(dir, k, j, i) then false else r
+
+		r
+
+	border_line = (dir, k, j, i) ->
+		if dir == 0
+			r = if k in borders[0] or j in borders[1] then true else false
+		else if dir == 1
+			r = if k in borders[0] or i in borders[2] then true else false
+		else if dir == 2
+			r = if j in borders[1] or i in borders[2] then true else false
 		r
 
 	[k_first, j_first, i_first] = [0, 0, 0]
@@ -856,6 +862,18 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 										res = true
 			res
 
+		k_lst_main = get_segment(k_first, k_last, detail[0])
+		j_lst_main = get_segment(j_first, j_last, detail[1])
+		i_lst_main = get_segment(i_first, i_last, detail[2])
+
+		k_lst_front = get_segment(k_first, k_last, 1)
+		j_lst_front = get_segment(j_first, j_last, 1)
+		i_lst_front = get_segment(i_first, i_last, 1)
+
+		k_lst_back = get_segment(k_first, k_last, 1)
+		j_lst_back = get_segment(j_first, j_last, 1)
+		i_lst_back = get_segment(i_first, i_last, 1)
+
 	else if filter_list.length
 		
 		mask = ([] for x in [0...data.length])
@@ -899,6 +917,18 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 									if mask[k + ck][j + cj][i + ci]
 										res = true
 			res
+
+		k_lst_main = get_segment(k_first, k_last, detail[0])
+		j_lst_main = get_segment(j_first, j_last, detail[1])
+		i_lst_main = get_segment(i_first, i_last, detail[2])
+
+		k_lst_front = get_segment(k_first, k_last, 1)
+		j_lst_front = get_segment(j_first, j_last, 1)
+		i_lst_front = get_segment(i_first, i_last, 1)
+
+		k_lst_back = get_segment(k_first, k_last, 1)
+		j_lst_back = get_segment(j_first, j_last, 1)
+		i_lst_back = get_segment(i_first, i_last, 1)
 
 	filter_cells = if filter_list.length or filter_scalar.length then true else false
 
@@ -948,7 +978,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 								if internal_area(2, k0, j0, i)
 									if filter_cells or (i in i_lst_filter)
 										faces_internal.push(face_0, face_1)
-								else if filter_cells or (i in i_lst_main)
+								else if (i in i_lst_main)
 									faces.push(face_0, face_1)
 							else
 								faces.push(face_0, face_1)
@@ -1034,7 +1064,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 								if internal_area(1, k0, j, i)
 									if filter_cells or (j in j_lst_filter)
 										faces_internal.push(face_0, face_1)
-								else if filter_cells or (j in j_lst_main)
+								else if (j in j_lst_main)
 									faces.push(face_0, face_1)
 							else
 								faces.push(face_0, face_1)
@@ -1125,7 +1155,7 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 								if internal_area(0, k, j, i)
 									if filter_cells or (k in k_lst_filter)
 										faces_internal.push(face_0, face_1)
-								else if filter_cells or (k in k_lst_main)
+								else if (k in k_lst_main)
 									faces.push(face_0, face_1)
 							else
 								faces.push(face_0, face_1)
@@ -1327,7 +1357,10 @@ root.GridLines =
 											res = true
 				res
 
-			filter_d = d
+			filter_d = [
+				get_segment(0, k_last, 1),
+				get_segment(0, j_last, 1),
+				get_segment(0, i_last, 1)]
 
 			borders = [
 				[0, data.length - 1], 
@@ -1373,7 +1406,10 @@ root.GridLines =
 											res = true
 				res
 
-			filter_d = d
+			filter_d = [
+				get_segment(0, k_last, 1),
+				get_segment(0, j_last, 1),
+				get_segment(0, i_last, 1)]
 
 			borders = [
 				[0, data.length - 1], 

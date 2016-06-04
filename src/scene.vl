@@ -11,6 +11,7 @@ Scene
 	property var script_lib_flag_2: false
 	property var script_lib_flag_3: false
 	property var script_styles_flag: false
+	property var key_flag: false
 
 	property var redef_flag: false
 
@@ -682,6 +683,114 @@ Scene
 				f_export.add(grid.controls, "*.png");
 				f_export.add(grid.controls, "*.svg [slow]");
 			}
+
+			function keypress_event(e) 
+			{
+
+				if (document.activeElement.type === "text" || 
+					document.activeElement.type === "textarea") return;
+
+				try {
+					var ch = String.fromCharCode(e.keyCode);
+
+					if (ch != 'k' && ch != 'K' && ch != 'j' && ch != 'J' &&
+						ch != 'i' && ch != 'I' && ch != 'b' && ch != 'B' &&
+						ch != 'л' && ch != 'Л' && ch != 'о' && ch != 'О' &&
+						ch != 'ш' && ch != 'Ш' && ch != 'и' && ch != 'И')
+							return;
+
+					grid.filter_scalar = -1;
+					grid.filter_list = [];
+
+					if (grid.filter_block < 0)
+					{
+						grid.controls["parameter"] = "Block 1";
+
+						grid.filter_detail_i = [0, 1, 1];
+						grid.filter_detail_j = [0, 1, 1];
+						grid.filter_detail_k = [0, 1, 1];
+						grid.filter_block = 0;
+							
+						filter_upd("1");
+					}
+					else 
+					{
+						var b = grid.filter_block;
+
+						var k = grid.filter_detail_k[0];
+						var j = grid.filter_detail_j[0];
+						var i = grid.filter_detail_i[0];
+
+						switch(ch)
+						{
+							case 'k':
+							case 'л': 
+								if ( k < loader.grid[b].length - 2 ) k++; 
+								else k = loader.grid[b].length - 2; 
+								break;
+							case 'K':
+							case 'Л':
+								if (k > 1) k--; else k = 1; 
+								break;
+							case 'j': 
+							case 'о': 
+								if ( j < loader.grid[b][0].length - 2 ) j++; 
+								else j = loader.grid[b][0].length - 2; 
+								break;
+							case 'J':
+							case 'О': 
+								if (j > 1) j--; else j = 1; 
+								break;
+							case 'i': 
+							case 'ш': 
+								if ( i < loader.grid[b][0][0].length - 2 ) i++;
+								else i = loader.grid[b][0][0].length - 2;
+								break;
+							case 'I':
+							case 'Ш': 
+								if (i > 1) i--; else i = 1; 
+								break;
+							case 'b':
+							case 'и':
+								if( b < loader.grid.length - 1 ) b++; else b = 0;
+								if (k > loader.grid[b].length - 2 ) 
+									k = loader.grid[b].length - 2;
+								if (j > loader.grid[b][0].length - 2 ) 
+									j = loader.grid[b][0].length - 2;
+								if (i > loader.grid[b][0][0].length - 2 ) 
+									i = loader.grid[b][0][0].length - 2;
+								break;
+							case 'B':
+							case 'И':
+								if(b > 1) b--; else b = loader.grid.length - 1;
+								if (k > loader.grid[b].length - 2 ) 
+									k = loader.grid[b].length - 2;
+								if (j > loader.grid[b][0].length - 2 ) 
+									j = loader.grid[b][0].length - 2;
+								if (i > loader.grid[b][0][0].length - 2 ) 
+									i = loader.grid[b][0][0].length - 2;
+								break;
+						}
+
+						grid.filter_detail_k = [k, k + 1, 1];
+						grid.filter_detail_j = [j, j + 1, 1];
+						grid.filter_detail_i = [i, i + 1, 1];
+
+						grid.filter_block = b;
+
+						grid.controls["parameter"] = "Block " + (b + 1).toString();
+						
+						filter_upd((b + 1).toString());
+					}
+
+				} catch (e) {
+				}
+			}
+
+			if (!key_flag) {
+				window.addEventListener( "keypress", keypress_event, false );
+				key_flag = true;
+			}
 		}
 
 		function add_style_controls(f_lines, f_faces, controls)
@@ -972,12 +1081,6 @@ Scene
 			function filter_scalar_upd(value)
 			{
 				filter_cells_upd();
-
-				for ( var i = 0; i < grid['$items'].length; i++ )
-					grid['$items'][i].option_detail = [1, 1, 1];
-
-				for ( k in grid.d_controls )
-					grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
 							
 				grid.state_l_directions = 
 					(grid.state_l_directions != 0)? 0: 1;
@@ -1031,12 +1134,6 @@ Scene
 
 			function filter_list_upd(value) {
 				filter_cells_upd();
-
-				for ( var i = 0; i < grid['$items'].length; i++ )
-					grid['$items'][i].option_detail = [1, 1, 1];
-
-				for ( k in grid.d_controls )
-					grid.d_controls[k] = 'di = 1, dj = 1, dk = 1';
 
 				grid.state_l_directions = 
 					(grid.state_l_directions != 0)? 0: 1;
@@ -1429,106 +1526,6 @@ Scene
 							}
 						} 
 					});
-
-					function keypress_event(e) 
-					{
-						if (document.activeElement.type === "text" || 
-							document.activeElement.type === "textarea") return;
-
-						var ch = String.fromCharCode(e.keyCode);
-
-						if (ch != 'k' && ch != 'K' && ch != 'j' && ch != 'J' &&
-							ch != 'i' && ch != 'I' && ch != 'b' && ch != 'B' &&
-							ch != 'л' && ch != 'Л' && ch != 'о' && ch != 'О' &&
-							ch != 'ш' && ch != 'Ш' && ch != 'и' && ch != 'И')
-							return;
-
-						grid.filter_scalar = -1;
-						grid.filter_list = [];
-
-						if (grid.filter_block < 0)
-						{
-							grid.controls["parameter"] = "Block 1";
-
-							grid.filter_detail_i = [0, 1, 1];
-							grid.filter_detail_j = [0, 1, 1];
-							grid.filter_detail_k = [0, 1, 1];
-							grid.filter_block = 0;
-
-							filter_upd("1");
-						}
-						else 
-						{
-							var b = grid.filter_block;
-
-							var k = grid.filter_detail_k[0];
-							var j = grid.filter_detail_j[0];
-							var i = grid.filter_detail_i[0];
-
-							switch(ch)
-							{
-								case 'k':
-								case 'л': 
-									if ( k < loader.grid[b].length - 2 ) k++; 
-									else k = loader.grid[b].length - 2; 
-									break;
-								case 'K':
-								case 'Л':
-									if (k > 1) k--; else k = 1; 
-									break;
-								case 'j': 
-								case 'о': 
-									if ( j < loader.grid[b][0].length - 2 ) j++; 
-									else j = loader.grid[b][0].length - 2; 
-									break;
-								case 'J':
-								case 'О': 
-									if (j > 1) j--; else j = 1; 
-									break;
-								case 'i': 
-								case 'ш': 
-									if ( i < loader.grid[b][0][0].length - 2 ) i++;
-									else i = loader.grid[b][0][0].length - 2;
-									break;
-								case 'I':
-								case 'Ш': 
-									if (i > 1) i--; else i = 1; 
-									break;
-								case 'b':
-								case 'и':
-									if( b < loader.grid.length - 1 ) b++; else b = 0;
-									if (k > loader.grid[b].length - 2 ) 
-										k = loader.grid[b].length - 2;
-									if (j > loader.grid[b][0].length - 2 ) 
-										j = loader.grid[b][0].length - 2;
-									if (i > loader.grid[b][0][0].length - 2 ) 
-										i = loader.grid[b][0][0].length - 2;
-									break;
-								case 'B':
-								case 'И':
-									if(b > 1) b--; else b = loader.grid.length - 1;
-									if (k > loader.grid[b].length - 2 ) 
-										k = loader.grid[b].length - 2;
-									if (j > loader.grid[b][0].length - 2 ) 
-										j = loader.grid[b][0].length - 2;
-									if (i > loader.grid[b][0][0].length - 2 ) 
-										i = loader.grid[b][0][0].length - 2;
-									break;
-							}
-
-							grid.filter_detail_k = [k, k + 1, 1];
-							grid.filter_detail_j = [j, j + 1, 1];
-							grid.filter_detail_i = [i, i + 1, 1];
-
-							grid.filter_block = b;
-
-							grid.controls["parameter"] = "Block " + (b + 1).toString();
-
-							filter_upd((b + 1).toString());
-						}
-					}
-					
-					window.addEventListener( "keypress", keypress_event, false );
 				}
 
 				data_counter ++;

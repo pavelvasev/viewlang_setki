@@ -30,28 +30,6 @@
         linewidth: 1
       }), coeff + 3
     ];
-    last_border_line = function(dir, k, j, i) {
-      var r;
-      if (dir === 0) {
-        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[1], j) >= 0 ? true : false;
-      } else if (dir === 1) {
-        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
-      } else if (dir === 2) {
-        r = indexOf.call(borders[1], j) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
-      }
-      return r;
-    };
-    border_line = function(dir, k, j, i) {
-      var r;
-      if (dir === 0) {
-        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[1], j) >= 0 ? true : false;
-      } else if (dir === 1) {
-        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
-      } else if (dir === 2) {
-        r = indexOf.call(borders[1], j) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
-      }
-      return r;
-    };
     if (borders.length > 5) {
       filter_last_border_line = function(dir, k, j, i) {
         var r;
@@ -77,6 +55,29 @@
         r = indexOf.call(filter_borders[0], k) >= 0 || indexOf.call(filter_borders[2], i) >= 0 ? true : false;
       } else if (dir === 2) {
         r = indexOf.call(filter_borders[1], j) >= 0 || indexOf.call(filter_borders[2], i) >= 0 ? true : false;
+      }
+      return r;
+    };
+    last_border_line = function(dir, k, j, i) {
+      var r;
+      if (dir === 0) {
+        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[1], j) >= 0 ? true : false;
+      } else if (dir === 1) {
+        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
+      } else if (dir === 2) {
+        r = indexOf.call(borders[1], j) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
+      }
+      r = filter_last_border_line(dir, k, j, i) ? false : r;
+      return r;
+    };
+    border_line = function(dir, k, j, i) {
+      var r;
+      if (dir === 0) {
+        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[1], j) >= 0 ? true : false;
+      } else if (dir === 1) {
+        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
+      } else if (dir === 2) {
+        r = indexOf.call(borders[1], j) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
       }
       return r;
     };
@@ -431,28 +432,6 @@
     filter_borders = [[filter_detail[0][0], filter_detail[0][filter_detail[0].length - 1]], [filter_detail[1][0], filter_detail[1][filter_detail[1].length - 1]], [filter_detail[2][0], filter_detail[2][filter_detail[2].length - 1]]];
     coeff = 5;
     filter_border_color = [0, 0, 1];
-    last_border_line = function(dir, k, j, i) {
-      var r;
-      if (dir === 0) {
-        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[1], j) >= 0 ? true : false;
-      } else if (dir === 1) {
-        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
-      } else if (dir === 2) {
-        r = indexOf.call(borders[1], j) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
-      }
-      return r;
-    };
-    border_line = function(dir, k, j, i) {
-      var r;
-      if (dir === 0) {
-        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[1], j) >= 0 ? true : false;
-      } else if (dir === 1) {
-        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
-      } else if (dir === 2) {
-        r = indexOf.call(borders[1], j) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
-      }
-      return r;
-    };
     if (borders.length > 5) {
       filter_last_border_line = function(dir, k, j, i) {
         var r;
@@ -478,6 +457,29 @@
         r = indexOf.call(filter_borders[0], k) >= 0 || indexOf.call(filter_borders[2], i) >= 0 ? true : false;
       } else if (dir === 2) {
         r = indexOf.call(filter_borders[1], j) >= 0 || indexOf.call(filter_borders[2], i) >= 0 ? true : false;
+      }
+      return r;
+    };
+    last_border_line = function(dir, k, j, i) {
+      var r;
+      if (dir === 0) {
+        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[1], j) >= 0 ? true : false;
+      } else if (dir === 1) {
+        r = indexOf.call(borders[0], k) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
+      } else if (dir === 2) {
+        r = indexOf.call(borders[1], j) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
+      }
+      r = filter_last_border_line(dir, k, j, i) ? false : r;
+      return r;
+    };
+    border_line = function(dir, k, j, i) {
+      var r;
+      if (dir === 0) {
+        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[1], j) >= 0 ? true : false;
+      } else if (dir === 1) {
+        r = indexOf.call(borders[0], k) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
+      } else if (dir === 2) {
+        r = indexOf.call(borders[1], j) >= 0 || indexOf.call(borders[2], i) >= 0 ? true : false;
       }
       return r;
     };
@@ -1010,6 +1012,15 @@
         }
         return res;
       };
+      k_lst_main = get_segment(k_first, k_last, detail[0]);
+      j_lst_main = get_segment(j_first, j_last, detail[1]);
+      i_lst_main = get_segment(i_first, i_last, detail[2]);
+      k_lst_front = get_segment(k_first, k_last, 1);
+      j_lst_front = get_segment(j_first, j_last, 1);
+      i_lst_front = get_segment(i_first, i_last, 1);
+      k_lst_back = get_segment(k_first, k_last, 1);
+      j_lst_back = get_segment(j_first, j_last, 1);
+      i_lst_back = get_segment(i_first, i_last, 1);
     } else if (filter_list.length) {
       mask = (function() {
         var q, ref, results;
@@ -1107,6 +1118,15 @@
         }
         return res;
       };
+      k_lst_main = get_segment(k_first, k_last, detail[0]);
+      j_lst_main = get_segment(j_first, j_last, detail[1]);
+      i_lst_main = get_segment(i_first, i_last, detail[2]);
+      k_lst_front = get_segment(k_first, k_last, 1);
+      j_lst_front = get_segment(j_first, j_last, 1);
+      i_lst_front = get_segment(i_first, i_last, 1);
+      k_lst_back = get_segment(k_first, k_last, 1);
+      j_lst_back = get_segment(j_first, j_last, 1);
+      i_lst_back = get_segment(i_first, i_last, 1);
     }
     filter_cells = filter_list.length || filter_scalar.length ? true : false;
     i_part = function(dir, i_index, k1, k2, j1, j2) {
@@ -1164,7 +1184,7 @@
                   if (filter_cells || (indexOf.call(i_lst_filter, i) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (filter_cells || (indexOf.call(i_lst_main, i) >= 0)) {
+                } else if ((indexOf.call(i_lst_main, i) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -1282,7 +1302,7 @@
                   if (filter_cells || (indexOf.call(j_lst_filter, j) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (filter_cells || (indexOf.call(j_lst_main, j) >= 0)) {
+                } else if ((indexOf.call(j_lst_main, j) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -1414,7 +1434,7 @@
                   if (filter_cells || (indexOf.call(k_lst_filter, k) >= 0)) {
                     return faces_internal.push(face_0, face_1);
                   }
-                } else if (filter_cells || (indexOf.call(k_lst_main, k) >= 0)) {
+                } else if ((indexOf.call(k_lst_main, k) >= 0)) {
                   return faces.push(face_0, face_1);
                 }
               } else {
@@ -1643,7 +1663,7 @@
           }
           return res;
         };
-        filter_d = d;
+        filter_d = [get_segment(0, k_last, 1), get_segment(0, j_last, 1), get_segment(0, i_last, 1)];
         borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
       } else if (filter_list.length) {
         mask = (function() {
@@ -1739,7 +1759,7 @@
           }
           return res;
         };
-        filter_d = d;
+        filter_d = [get_segment(0, k_last, 1), get_segment(0, j_last, 1), get_segment(0, i_last, 1)];
         borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1]];
       } else {
         filtered = function(k, j, i) {

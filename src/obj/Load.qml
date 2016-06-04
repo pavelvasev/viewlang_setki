@@ -165,10 +165,10 @@ Item
 	function calc_scale_coeff(Min, Max) {
 		var m = Math.max(
 				Math.abs(Min[0]), Math.abs(Min[1]), Math.abs(Min[2]),
-				Max[0], Max[1], Max[2]
+				Max[0], Max[1], Max[2], 0.1
 			);
 
-		return Math.round(25 / m);
+		return 25 / m;
 	}
 
 	///////////////////////////////////////////////////////////////////////////
