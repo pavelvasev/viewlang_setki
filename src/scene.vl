@@ -101,7 +101,7 @@ Scene
 	{
 		id: inputFile
 		text: "Grid file:"
-		file: Qt.resolvedUrl( "../data/ris5.dat" )
+		file: Qt.resolvedUrl( "../data/1_ris5.dat" )
 		multiple: true
 	}
 
