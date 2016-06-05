@@ -57,7 +57,16 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, das
 		else if dir == 2
 			r = if j in borders[1] and i in borders[2] then true else false
 
-		r = if filter_last_border_line(dir, k, j, i) then false else r
+		if filter_last_border_line(dir, k, j, i)
+			if dir == 2
+				if borders[0][0] == filter_borders[0][0] and borders[0][1] == filter_borders[0][1]
+					r = false
+			else if dir == 1
+				if borders[1][0] == filter_borders[1][0] and borders[1][1] == filter_borders[1][1]
+					r = false
+			else if dir == 0
+				if borders[2][0] == filter_borders[2][0] and borders[2][1] == filter_borders[2][1]
+					r = false
 
 		r
 
@@ -212,7 +221,7 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, das
 
 						for i in [0..i_last]
 							do (i) ->
-								if filtered(k, j, i)
+								if filtered(-1, k, j, i)
 									if flag == 1
 										pnts.push(data[k][j][i][0], 
 											data[k][j][i][1], data[k][j][i][2])
@@ -265,7 +274,7 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, das
 
 						for j in [0..j_last]
 							do (j) ->
-								if filtered(k, j, i)
+								if filtered(-1, k, j, i)
 									if flag == 1
 										pnts.push(data[k][j][i][0], 
 											data[k][j][i][1], data[k][j][i][2])
@@ -318,7 +327,7 @@ root.gen_lines = (data, scale_coeff, detail, directions, materials, borders, das
 
 						for k in [0..k_last]
 							do (k) ->
-								if filtered(k, j, i)
+								if filtered(-1, k, j, i)
 									if flag == 1
 										pnts.push(data[k][j][i][0], 
 											data[k][j][i][1], data[k][j][i][2])
@@ -394,8 +403,16 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 		else if dir == 2
 			r = if j in borders[1] and i in borders[2] then true else false
 
-		r = if filter_last_border_line(dir, k, j, i) then false else r
-
+		if filter_last_border_line(dir, k, j, i)
+			if dir == 2
+				if borders[0][0] == filter_borders[0][0] and borders[0][1] == filter_borders[0][1]
+					r = false
+			else if dir == 1
+				if borders[1][0] == filter_borders[1][0] and borders[1][1] == filter_borders[1][1]
+					r = false
+			else if dir == 0
+				if borders[2][0] == filter_borders[2][0] and borders[2][1] == filter_borders[2][1]
+					r = false
 		r
 
 	border_line = (dir, k, j, i) ->
@@ -551,7 +568,7 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 						for i in [0..i_last - 1]
 							do (i) ->
 
-								if filtered(k, j, i) and filtered(k, j, i + 1)
+								if filtered(0, k, j, i)
 									add_seg(0, k, j, i, geometry, seg_colors,
 											filter_detail, filter_directions, filter_color)
 									add_seg(0, k, j, i + 1, geometry, seg_colors,
@@ -593,7 +610,7 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 						for j in [0..j_last - 1]
 							do (j) ->
 
-								if filtered(k, j, i) and filtered(k, j + 1, i)
+								if filtered(1, k, j, i)
 									add_seg(1, k, j, i, geometry, seg_colors,
 											filter_detail, filter_directions, filter_color)
 									add_seg(1, k, j + 1, i, geometry, seg_colors,
@@ -635,7 +652,7 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 						for k in [0..k_last - 1]
 							do (k) ->
 
-								if filtered(k, j, i) and filtered(k + 1, j, i)
+								if filtered(2, k, j, i)
 									add_seg(2, k, j, i, geometry, seg_colors,
 											filter_detail, filter_directions, filter_color)
 									add_seg(2, k + 1, j, i, geometry, seg_colors,
@@ -842,9 +859,9 @@ root.gen_surfaces = (data, scale_coeff, det, dir, mat,
 			i > data[0][0].length - 1
 				return res
 
-			ck_lst = if (dir != 1 and dir != 2 and k > 0) then [-1, 0] else [0]
-			cj_lst = if (dir != 0 and dir != 2 and j > 0) then [-1, 0] else [0]
-			ci_lst = if (dir != 0 and dir != 1 and i > 0) then [-1, 0] else [0]
+			ck_lst = if dir == 0 and k > 0 then [-1, 0] else [0]
+			cj_lst = if dir == 1 and j > 0 then [-1, 0] else [0]
+			ci_lst = if dir == 2 and i > 0 then [-1, 0] else [0]
 
 			ck_lst.push(1) if (k + 1 == data.length - 1)
 			cj_lst.push(1) if (j + 1 == data[0].length - 1)
@@ -1315,10 +1332,22 @@ root.GridLines =
 			root.filter_j_segment = get_segment(filter[1][0], filter[1][1], filter[1][2])
 			root.filter_i_segment = get_segment(filter[2][0], filter[2][1], filter[2][2])
 
-			filtered = (k, j, i) ->
-				if k >= filter[0][0] and k <= filter[0][1] and \
-				j >= filter[1][0] and j <= filter[1][1] and \
-				i >= filter[2][0] and i <= filter[2][1] then true else false
+			filtered = (dir, k, j, i) ->
+				res = if k >= filter[0][0] and k <= filter[0][1] and \
+					j >= filter[1][0] and j <= filter[1][1] and \
+					i >= filter[2][0] and i <= filter[2][1] then true else false
+				
+				if dir == 0 
+					res = if i + 1 >= filter[2][0] and i + 1 <= filter[2][1] then \
+						res else false
+				if dir == 1 
+					res = if j + 1 >= filter[1][0] and j + 1 <= filter[1][1] then \
+						res else false
+				if dir == 2 
+					res = if k + 1 >= filter[0][0] and k + 1 <= filter[0][1] then \
+						res else false
+
+				res
 
 			filter_d = [filter_k_segment, filter_j_segment, filter_i_segment]
 
@@ -1334,12 +1363,12 @@ root.GridLines =
 
 			root.scalar = filter_scalar[0] + 2
 			
-			filtered = (k, j, i) -> 
+			filtered = (dir, k, j, i) -> 
 				res = false
 				
-				ck_lst = if (k > 0) then [-1, 0] else [0]
-				cj_lst = if (j > 0) then [-1, 0] else [0]
-				ci_lst = if (i > 0) then [-1, 0] else [0]
+				ck_lst = if (dir != 2 and k > 0) then [-1, 0] else [0]
+				cj_lst = if (dir != 1 and j > 0) then [-1, 0] else [0]
+				ci_lst = if (dir != 0 and i > 0) then [-1, 0] else [0]
 
 				ck_lst.push(1) if (k + 1 == k_last)
 				cj_lst.push(1) if (j + 1 == j_last)
@@ -1385,12 +1414,12 @@ root.GridLines =
 					mask[ ind[2] ][ ind[1] ].length > ind[0]
 						mask[ ind[2] ][ ind[1] ][ ind[0] ] = true
 
-			filtered = (k, j, i) -> 
+			filtered = (dir, k, j, i) -> 
 				res = false
 
-				ck_lst = if (k > 0) then [-1, 0] else [0]
-				cj_lst = if (j > 0) then [-1, 0] else [0]
-				ci_lst = if (i > 0) then [-1, 0] else [0]
+				ck_lst = if (dir != 2 and k > 0) then [-1, 0] else [0]
+				cj_lst = if (dir != 1 and j > 0) then [-1, 0] else [0]
+				ci_lst = if (dir != 0 and i > 0) then [-1, 0] else [0]
 
 				ck_lst.push(1) if (k + 1 == k_last)
 				cj_lst.push(1) if (j + 1 == j_last)

@@ -67,7 +67,21 @@
       } else if (dir === 2) {
         r = indexOf.call(borders[1], j) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
       }
-      r = filter_last_border_line(dir, k, j, i) ? false : r;
+      if (filter_last_border_line(dir, k, j, i)) {
+        if (dir === 2) {
+          if (borders[0][0] === filter_borders[0][0] && borders[0][1] === filter_borders[0][1]) {
+            r = false;
+          }
+        } else if (dir === 1) {
+          if (borders[1][0] === filter_borders[1][0] && borders[1][1] === filter_borders[1][1]) {
+            r = false;
+          }
+        } else if (dir === 0) {
+          if (borders[2][0] === filter_borders[2][0] && borders[2][1] === filter_borders[2][1]) {
+            r = false;
+          }
+        }
+      }
       return r;
     };
     border_line = function(dir, k, j, i) {
@@ -248,7 +262,7 @@
             filter_pnts = [];
             flag = -1;
             fn1 = function(i) {
-              if (filtered(k, j, i)) {
+              if (filtered(-1, k, j, i)) {
                 if (flag === 1) {
                   pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
                   add_seg(pnts, 0, k, j, 0);
@@ -313,7 +327,7 @@
             filter_pnts = [];
             flag = -1;
             fn2 = function(j) {
-              if (filtered(k, j, i)) {
+              if (filtered(-1, k, j, i)) {
                 if (flag === 1) {
                   pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
                   add_seg(pnts, 1, k, 0, i);
@@ -380,7 +394,7 @@
               filter_pnts = [];
               flag = -1;
               fn2 = function(k) {
-                if (filtered(k, j, i)) {
+                if (filtered(-1, k, j, i)) {
                   if (flag === 1) {
                     pnts.push(data[k][j][i][0], data[k][j][i][1], data[k][j][i][2]);
                     add_seg(pnts, 2, 0, j, i);
@@ -469,7 +483,21 @@
       } else if (dir === 2) {
         r = indexOf.call(borders[1], j) >= 0 && indexOf.call(borders[2], i) >= 0 ? true : false;
       }
-      r = filter_last_border_line(dir, k, j, i) ? false : r;
+      if (filter_last_border_line(dir, k, j, i)) {
+        if (dir === 2) {
+          if (borders[0][0] === filter_borders[0][0] && borders[0][1] === filter_borders[0][1]) {
+            r = false;
+          }
+        } else if (dir === 1) {
+          if (borders[1][0] === filter_borders[1][0] && borders[1][1] === filter_borders[1][1]) {
+            r = false;
+          }
+        } else if (dir === 0) {
+          if (borders[2][0] === filter_borders[2][0] && borders[2][1] === filter_borders[2][1]) {
+            r = false;
+          }
+        }
+      }
       return r;
     };
     border_line = function(dir, k, j, i) {
@@ -634,7 +662,7 @@
             results3 = [];
             for (i = w = 0, ref6 = i_last - 1; 0 <= ref6 ? w <= ref6 : w >= ref6; i = 0 <= ref6 ? ++w : --w) {
               results3.push((function(i) {
-                if (filtered(k, j, i) && filtered(k, j, i + 1)) {
+                if (filtered(0, k, j, i)) {
                   add_seg(0, k, j, i, geometry, seg_colors, filter_detail, filter_directions, filter_color);
                   return add_seg(0, k, j, i + 1, geometry, seg_colors, filter_detail, filter_directions, filter_color);
                 } else {
@@ -684,7 +712,7 @@
             results3 = [];
             for (j = y = 0, ref7 = j_last - 1; 0 <= ref7 ? y <= ref7 : y >= ref7; j = 0 <= ref7 ? ++y : --y) {
               results3.push((function(j) {
-                if (filtered(k, j, i) && filtered(k, j + 1, i)) {
+                if (filtered(1, k, j, i)) {
                   add_seg(1, k, j, i, geometry, seg_colors, filter_detail, filter_directions, filter_color);
                   return add_seg(1, k, j + 1, i, geometry, seg_colors, filter_detail, filter_directions, filter_color);
                 } else {
@@ -734,7 +762,7 @@
             results3 = [];
             for (k = z = 0, ref8 = k_last - 1; 0 <= ref8 ? z <= ref8 : z >= ref8; k = 0 <= ref8 ? ++z : --z) {
               results3.push((function(k) {
-                if (filtered(k, j, i) && filtered(k + 1, j, i)) {
+                if (filtered(2, k, j, i)) {
                   add_seg(2, k, j, i, geometry, seg_colors, filter_detail, filter_directions, filter_color);
                   return add_seg(2, k + 1, j, i, geometry, seg_colors, filter_detail, filter_directions, filter_color);
                 } else {
@@ -965,9 +993,9 @@
         if (k > data.length - 1 || j > data[0].length - 1 || i > data[0][0].length - 1) {
           return res;
         }
-        ck_lst = dir !== 1 && dir !== 2 && k > 0 ? [-1, 0] : [0];
-        cj_lst = dir !== 0 && dir !== 2 && j > 0 ? [-1, 0] : [0];
-        ci_lst = dir !== 0 && dir !== 1 && i > 0 ? [-1, 0] : [0];
+        ck_lst = dir === 0 && k > 0 ? [-1, 0] : [0];
+        cj_lst = dir === 1 && j > 0 ? [-1, 0] : [0];
+        ci_lst = dir === 2 && i > 0 ? [-1, 0] : [0];
         if (k + 1 === data.length - 1) {
           ck_lst.push(1);
         }
@@ -1602,23 +1630,30 @@
         root.filter_k_segment = get_segment(filter[0][0], filter[0][1], filter[0][2]);
         root.filter_j_segment = get_segment(filter[1][0], filter[1][1], filter[1][2]);
         root.filter_i_segment = get_segment(filter[2][0], filter[2][1], filter[2][2]);
-        filtered = function(k, j, i) {
-          if (k >= filter[0][0] && k <= filter[0][1] && j >= filter[1][0] && j <= filter[1][1] && i >= filter[2][0] && i <= filter[2][1]) {
-            return true;
-          } else {
-            return false;
+        filtered = function(dir, k, j, i) {
+          var res;
+          res = k >= filter[0][0] && k <= filter[0][1] && j >= filter[1][0] && j <= filter[1][1] && i >= filter[2][0] && i <= filter[2][1] ? true : false;
+          if (dir === 0) {
+            res = i + 1 >= filter[2][0] && i + 1 <= filter[2][1] ? res : false;
           }
+          if (dir === 1) {
+            res = j + 1 >= filter[1][0] && j + 1 <= filter[1][1] ? res : false;
+          }
+          if (dir === 2) {
+            res = k + 1 >= filter[0][0] && k + 1 <= filter[0][1] ? res : false;
+          }
+          return res;
         };
         filter_d = [filter_k_segment, filter_j_segment, filter_i_segment];
         borders = [[0, data.length - 1], [0, data[0].length - 1], [0, data[0][0].length - 1], [filter[0][0], filter[0][1]], [filter[1][0], filter[1][1]], [filter[2][0], filter[2][1]]];
       } else if (filter_scalar.length) {
         root.scalar = filter_scalar[0] + 2;
-        filtered = function(k, j, i) {
+        filtered = function(dir, k, j, i) {
           var ci_lst, cj_lst, ck, ck_lst, fn2, len, q, res;
           res = false;
-          ck_lst = k > 0 ? [-1, 0] : [0];
-          cj_lst = j > 0 ? [-1, 0] : [0];
-          ci_lst = i > 0 ? [-1, 0] : [0];
+          ck_lst = dir !== 2 && k > 0 ? [-1, 0] : [0];
+          cj_lst = dir !== 1 && j > 0 ? [-1, 0] : [0];
+          ci_lst = dir !== 0 && i > 0 ? [-1, 0] : [0];
           if (k + 1 === k_last) {
             ck_lst.push(1);
           }
@@ -1711,12 +1746,12 @@
           ind = filter_list[t];
           fn3(ind);
         }
-        filtered = function(k, j, i) {
+        filtered = function(dir, k, j, i) {
           var ci_lst, cj_lst, ck, ck_lst, fn4, len1, res, u;
           res = false;
-          ck_lst = k > 0 ? [-1, 0] : [0];
-          cj_lst = j > 0 ? [-1, 0] : [0];
-          ci_lst = i > 0 ? [-1, 0] : [0];
+          ck_lst = dir !== 2 && k > 0 ? [-1, 0] : [0];
+          cj_lst = dir !== 1 && j > 0 ? [-1, 0] : [0];
+          ci_lst = dir !== 0 && i > 0 ? [-1, 0] : [0];
           if (k + 1 === k_last) {
             ck_lst.push(1);
           }
