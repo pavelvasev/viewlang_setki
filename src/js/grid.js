@@ -785,7 +785,7 @@
       geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(geometry_pnts), 3));
       geometry.addAttribute('color', new THREE.BufferAttribute(new Float32Array(seg_colors), 3));
       geometry.computeBoundingSphere();
-      geometry.computeLineDistances();
+      
       if (!dashed) {
         material = new THREE.LineBasicMaterial({
           linewidth: 1,
@@ -803,6 +803,7 @@
       sceneObject.scale.x = scale_coeff;
       sceneObject.scale.y = scale_coeff;
       sceneObject.scale.z = scale_coeff;
+      sceneObject.computeLineDistances();
       return root.lines_seg.add(sceneObject);
     }
   };
@@ -1517,7 +1518,7 @@
     geometry = new THREE.BufferGeometry();
     geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(pnts), 3));
     geometry.computeBoundingSphere();
-    geometry.computeLineDistances();
+    
     if (!dashed) {
       sceneObject = new THREE.Line(geometry, material);
     } else {
@@ -1527,6 +1528,7 @@
     sceneObject.scale.x = scale_coeff;
     sceneObject.scale.y = scale_coeff;
     sceneObject.scale.z = scale_coeff;
+    sceneObject.computeLineDistances();
     return root.lines.add(sceneObject);
   };
 

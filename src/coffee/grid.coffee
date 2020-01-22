@@ -676,7 +676,7 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 			) )
 
 		geometry.computeBoundingSphere()
-		geometry.computeLineDistances()
+		
 
 		if not dashed
 			material = new THREE.LineBasicMaterial(
@@ -690,6 +690,7 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 		sceneObject.scale.x = scale_coeff
 		sceneObject.scale.y = scale_coeff
 		sceneObject.scale.z = scale_coeff
+		sceneObject.computeLineDistances()
 
 		root.lines_seg.add( sceneObject )
 
@@ -1212,7 +1213,7 @@ root.add_line = (pnts, scale_coeff, material, name, dashed=false) ->
 		) )
 	
 	geometry.computeBoundingSphere()
-	geometry.computeLineDistances();
+	
 	
 	if not dashed
 		sceneObject = new THREE.Line( geometry, material )
@@ -1224,6 +1225,7 @@ root.add_line = (pnts, scale_coeff, material, name, dashed=false) ->
 	sceneObject.scale.x = scale_coeff
 	sceneObject.scale.y = scale_coeff
 	sceneObject.scale.z = scale_coeff
+	sceneObject.computeLineDistances();
 
 	root.lines.add( sceneObject )
 
