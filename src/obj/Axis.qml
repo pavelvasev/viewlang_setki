@@ -103,7 +103,7 @@ SceneObject
 		
 		var geometry = new THREE.BufferGeometry()
 
-		geometry.addAttribute( 'position', new THREE.BufferAttribute( 
+		geometry.setAttribute( 'position', new THREE.BufferAttribute( 
 				new Float32Array(pnts), 3 
 			) )
 		

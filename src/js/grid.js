@@ -782,8 +782,8 @@
     }
     if (geometry_pnts.length) {
       geometry = new THREE.BufferGeometry();
-      geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(geometry_pnts), 3));
-      geometry.addAttribute('color', new THREE.BufferAttribute(new Float32Array(seg_colors), 3));
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(geometry_pnts), 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(seg_colors), 3));
       geometry.computeBoundingSphere();
       
       if (!dashed) {
@@ -1516,7 +1516,7 @@
       dashed = false;
     }
     geometry = new THREE.BufferGeometry();
-    geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(pnts), 3));
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pnts), 3));
     geometry.computeBoundingSphere();
     
     if (!dashed) {
@@ -1953,8 +1953,8 @@
         k = data[k_index];
         fn2(k);
       }
-      geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
-      geometry.addAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3));
       material = new THREE.PointsMaterial({
         vertexColors: THREE.VertexColors,
         size: radius * 2,

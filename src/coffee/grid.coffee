@@ -667,11 +667,11 @@ root.gen_lines_seg = (data, scale_coeff, detail, directions, mat, borders
 
 		geometry = new THREE.BufferGeometry()
 
-		geometry.addAttribute( 'position', new THREE.BufferAttribute( 
+		geometry.setAttribute( 'position', new THREE.BufferAttribute( 
 				new Float32Array(geometry_pnts), 3 
 			) )
 
-		geometry.addAttribute( 'color', new THREE.BufferAttribute( 
+		geometry.setAttribute( 'color', new THREE.BufferAttribute( 
 				new Float32Array(seg_colors), 3 
 			) )
 
@@ -1208,7 +1208,7 @@ root.add_line = (pnts, scale_coeff, material, name, dashed=false) ->
 	
 	geometry = new THREE.BufferGeometry()
 	
-	geometry.addAttribute( 'position', new THREE.BufferAttribute( 
+	geometry.setAttribute( 'position', new THREE.BufferAttribute( 
 			new Float32Array(pnts), 3 
 		) )
 	
@@ -1624,10 +1624,10 @@ root.GridPoints =
 									
 									root.cubes.add( sprite )
 
-		geometry.addAttribute('position', 
+		geometry.setAttribute('position', 
 			new THREE.BufferAttribute( new Float32Array(positions), 3 ) );
 
-		geometry.addAttribute('color', 
+		geometry.setAttribute('color', 
 			new THREE.BufferAttribute( new Float32Array(colors), 3 ) );
 
 		material = new THREE.PointsMaterial({vertexColors: THREE.VertexColors, size: radius * 2, sizeAttenuation: true})
